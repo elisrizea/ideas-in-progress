@@ -1,0 +1,353 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sonia: AI Shop Assistant</title>
+<meta name="author" content="Alin Rizea, DBM AI">
+<meta name="description" content="How Sonia, the AI shop assistant from FormAI, works: a Shadow DOM widget that shares its panel with A2, a catalogue search built from WooCommerce data, and product search that runs in the shopper's browser when a host blocks our servers. Live demo included.">
+<link rel="canonical" href="https://elisrizea.github.io/ideas-in-progress/sonia-shop-assistant/">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://elisrizea.github.io/ideas-in-progress/sonia-shop-assistant/">
+<meta property="og:title" content="Sonia: an AI shop assistant in one script tag">
+<meta property="og:description" content="A Shadow DOM widget that shares its panel with A2, a catalogue search built from WooCommerce data, and product search that runs in the shopper's browser when a host blocks our servers. Live demo included.">
+<meta property="og:image" content="https://elisrizea.github.io/ideas-in-progress/sonia-shop-assistant/cover.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="627">
+<meta property="og:site_name" content="DBM AI">
+<meta name="twitter:card" content="summary_large_image">
+<style>
+  @page {
+    size: A4;
+    margin: 17mm 18mm 18mm 18mm;
+    @bottom-center {
+      content: counter(page) " / " counter(pages);
+      font: 8pt "Helvetica Neue", Helvetica, Arial, sans-serif;
+      color: #6b7682;
+    }
+  }
+  :root { --ink: #1b1f24; --muted: #55606c; --navy: #1f4e79; --rule: #c8d1db; --tint: #eef4fa; --green: #1e6b46; }
+  html { background: #fff; }
+  body {
+    margin: 0; background: #fff; color: var(--ink);
+    font: 10.2pt/1.47 Charter, "Bitstream Charter", Georgia, serif;
+    -webkit-print-color-adjust: exact; print-color-adjust: exact;
+  }
+  h1, h2, h3, table, figcaption, .meta, .abstract-label, .caption-above, .demo { font-family: "Helvetica Neue", Helvetica, Arial, sans-serif; }
+  h1 { font-size: 19pt; line-height: 1.18; margin: 0 0 6px; color: var(--navy); font-weight: 700; letter-spacing: -0.2px; }
+  .subtitle { font: 11pt/1.35 "Helvetica Neue", Helvetica, Arial, sans-serif; color: var(--muted); margin: 0 0 10px; }
+  .meta { font-size: 8.8pt; color: var(--muted); padding-bottom: 10px; border-bottom: 2px solid var(--navy); margin-bottom: 12px; }
+  .meta a { color: var(--navy); }
+  .tag { display: inline-block; font-size: 7.6pt; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase;
+         color: var(--green); background: #e8f5ee; border: 1px solid #9fd0b4; border-radius: 3px; padding: 0 5px; margin-right: 6px; }
+  .demo {
+    display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+    background: #e8f5ee; border: 1px solid #9fd0b4; border-radius: 6px; padding: 8px 12px; margin: 0 0 10px; font-size: 9.6pt;
+  }
+  .demo a.btn { background: var(--green); color: #fff; text-decoration: none; font-weight: 700; padding: 5px 12px; border-radius: 5px; }
+  .demo span { color: #2c4a3a; }
+  .abstract { background: var(--tint); border-left: 3px solid var(--navy); padding: 8px 12px; margin: 0 0 6px; font-size: 9.8pt; }
+  .abstract-label { font-size: 8pt; font-weight: 700; letter-spacing: 0.6px; text-transform: uppercase; color: var(--navy); display: block; margin-bottom: 2px; }
+  h2 { font-size: 12.5pt; color: var(--navy); margin: 18px 0 5px; break-after: avoid; }
+  h3 { font-size: 10.4pt; color: var(--ink); margin: 12px 0 3px; break-after: avoid; }
+  p { margin: 4px 0 6px; text-align: left; hyphens: manual; }
+  ul, ol { margin: 3px 0 7px; padding-left: 20px; }
+  li { margin: 2px 0; }
+  code { font: 8.6pt/1.3 Menlo, "SF Mono", Consolas, monospace; background: #f2f4f7; padding: 0 3px; border-radius: 3px; }
+  table { border-collapse: collapse; width: 100%; margin: 6px 0 10px; font-size: 8.5pt; line-height: 1.35; break-inside: avoid; }
+  th, td { border: 1px solid var(--rule); padding: 3px 6px; vertical-align: top; text-align: left; }
+  th { background: var(--tint); font-weight: 700; }
+  figure { margin: 10px 0 12px; break-inside: avoid; }
+  figure svg { width: 100%; height: auto; display: block; }
+  figure.shot { float: right; width: 38%; margin: 2px 0 8px 16px; }
+  figure.shot img { width: 100%; height: auto; display: block; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.15); }
+  figcaption { font-size: 8.4pt; color: var(--muted); margin-top: 4px; line-height: 1.35; }
+  figcaption b { color: var(--ink); }
+  .caption-above { font-size: 8.4pt; color: var(--muted); margin: 8px 0 2px; break-after: avoid; }
+  .caption-above b { color: var(--ink); }
+  .clear { clear: both; }
+  @media print { .screen-only { display: none; } }
+  @media screen {
+    html { background: #e4e8ec; }
+    body { box-sizing: border-box; max-width: 210mm; margin: 24px auto; padding: 17mm 18mm;
+           box-shadow: 0 1px 4px rgba(0,0,0,0.12), 0 8px 28px rgba(0,0,0,0.08); }
+  }
+  @media screen and (max-width: 640px) {
+    body { margin: 0; padding: 20px 16px; box-shadow: none; }
+    figure.shot { float: none; width: 70%; margin: 8px auto 12px; }
+    table { display: block; overflow-x: auto; }
+  }
+</style>
+</head>
+<body>
+
+<h1>Sonia: an AI shop assistant in one script tag</h1>
+<p class="subtitle">How the Shadow DOM widget shares its panel with A2, how the catalogue search is built, and why product search can run in the shopper's browser</p>
+<div class="meta"><span class="tag">Live product &middot; technical note</span> Alin Rizea &middot; DBM AI &middot; alin.rizea@gmail.com &middot; October 2026<span class="screen-only"> &middot; <a href="sonia-shop-assistant.pdf">PDF version</a> &middot; <a href="../">More ideas, and how to collaborate</a></span></div>
+
+<div class="demo">
+  <a class="btn" href="https://demo.dbm-ai.com/">Try the live demo</a>
+  <span><b>demo.dbm-ai.com</b>: Sonia running on seven demo shops. Ask about products, prices, delivery, or switch her personality.</span>
+</div>
+
+<div class="abstract">
+  <span class="abstract-label">Summary</span>
+  Sonia is the shop assistant in FormAI, DBM AI's product for online shops. One script tag adds two assistants to a
+  website: Sonia, who answers product and shop questions, and A2, who helps visitors fill in forms. Both live in one
+  chat panel inside a closed Shadow DOM, so the shop's styles and scripts cannot break it and it cannot break the shop.
+  Sonia's product search is built from the shop's own WooCommerce data. When a shop's host blocks requests from our
+  servers, which some small hosting providers do to every datacenter IP address, the search moves into the shopper's
+  browser: our server plans the queries, the browser runs them against the shop's public API from the shop's own page,
+  and our server writes the answer from the real results.
+</div>
+
+<h2>1. What Sonia and A2 do</h2>
+<figure class="shot">
+  <img src="sonia-widget.png" alt="The Sonia chat panel on a shop page: a dark panel titled Sonia Shop Assistant with an English language selector, a welcome message, a text box with a microphone button, and Sonia's avatar in the corner.">
+  <figcaption><b>Sonia on a shop page.</b> Language selector, wishlist, voice input and read-aloud replies.</figcaption>
+</figure>
+<p>
+  <b>Sonia</b> works like a good shop assistant. She finds products, gives the exact details (SKU, price, stock,
+  sizes, colours), compares items, makes suggestions, answers questions about delivery, returns and contact details,
+  and hands the conversation to a person when the visitor asks for one. She offers the wishlist after showing
+  products and a restock alert when something is out of stock. She speaks in one of eleven personality presets that
+  the shop owner picks, and visitors can type or talk to her and hear her reply. Her answers must come only from data
+  her tools return: she never invents a product, a price, a currency or a policy.
+</p>
+<p>
+  <b>A2</b> is the form helper. It finds every form on the page, including forms added later by single-page apps
+  and AJAX, puts a <b>?</b> button and a microphone next to each field, explains what a field needs, and chats
+  about the form in the language set for it. Before anything leaves the browser, personal data such as email addresses, phone numbers, card
+  numbers and IBANs is swapped for placeholders, using checksums to avoid false matches, so the language model only
+  ever sees the placeholders. The real values are put back when the reply arrives.
+</p>
+<p>
+  The same data also powers <b>AI Search</b>: a visitor types something like &ldquo;orange leather bag under 300&rdquo;
+  into the shop's own search box and lands on the shop's filtered results page, with a short note on how the query
+  was understood.
+</p>
+<div class="clear"></div>
+
+<h2>2. One script tag, one Shadow DOM</h2>
+<p>
+  An assistant that sits on other people's websites has to survive their CSS. Shop themes reset every element,
+  use <code>!important</code> freely and load dozens of plugins. A widget built with ordinary page elements gets
+  restyled by the theme, and its own styles leak into the shop. So the chat panel is built inside a <b>closed
+  Shadow DOM</b>: a separate DOM tree attached to one host element, with its own styles. The theme's CSS stops at
+  the boundary, the widget's CSS stays inside, and in closed mode the page's scripts cannot reach in either.
+</p>
+<p>
+  A2 lives in two places at once. Its <b>?</b> and microphone buttons have to sit next to the shop's own form fields,
+  so they are added to the page itself, with inline styles to keep clashes small. Its conversation lives in the
+  <b>same panel</b> as Sonia's. Pressing &ldquo;Chat&rdquo; in a field's help switches the panel to A2 mode, keeps
+  Sonia's messages aside, and shows a toggle to switch back. Each mode keeps its own history, so the visitor can move
+  between &ldquo;help me with this form&rdquo; and &ldquo;do you have this in blue?&rdquo; without losing either.
+</p>
+
+<figure>
+<svg viewBox="0 0 700 250" xmlns="http://www.w3.org/2000/svg" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" role="img" aria-label="A shop page with its own form, where A2 adds help and microphone buttons next to fields. In the corner, a closed Shadow DOM holds one chat panel that switches between Sonia mode and A2 mode.">
+  <defs>
+    <marker id="s1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#1f4e79"/>
+    </marker>
+  </defs>
+  <rect x="6" y="6" width="688" height="238" rx="8" fill="#fbfaf7" stroke="#b8b2a5" stroke-width="1.2"/>
+  <text x="20" y="28" font-size="11" font-weight="700" fill="#5c5546">The shop's page</text>
+  <text x="20" y="43" font-size="9.5" fill="#7a7364">theme CSS, plugins, the shop's own scripts</text>
+
+  <!-- form -->
+  <rect x="20" y="58" width="300" height="168" rx="6" fill="#ffffff" stroke="#c9c3b6"/>
+  <text x="32" y="78" font-size="10.5" font-weight="700" fill="#1b1f24">Checkout form (the shop's own)</text>
+  <g font-size="9.5" fill="#55606c">
+    <text x="32" y="100">Email</text>
+    <rect x="32" y="105" width="190" height="20" rx="3" fill="#fff" stroke="#c9c3b6"/>
+    <text x="32" y="145">Phone</text>
+    <rect x="32" y="150" width="190" height="20" rx="3" fill="#fff" stroke="#c9c3b6"/>
+    <text x="32" y="190">VAT number</text>
+    <rect x="32" y="195" width="190" height="20" rx="3" fill="#fff" stroke="#c9c3b6"/>
+  </g>
+  <g font-size="10" font-weight="700" text-anchor="middle">
+    <circle cx="238" cy="115" r="9" fill="#eef0ff" stroke="#6366f1"/><text x="238" y="119" fill="#4f46e5">?</text>
+    <circle cx="262" cy="115" r="9" fill="#eef0ff" stroke="#6366f1"/>
+    <rect x="259.5" y="109" width="5" height="8" rx="2.5" fill="#4f46e5"/>
+    <path d="M257.5,114 a4.5,4.5 0 0 0 9,0 M262,118.5 L262,121" fill="none" stroke="#4f46e5" stroke-width="1.2"/>
+    <circle cx="238" cy="160" r="9" fill="#eef0ff" stroke="#6366f1"/><text x="238" y="164" fill="#4f46e5">?</text>
+    <circle cx="238" cy="205" r="9" fill="#eef0ff" stroke="#6366f1"/><text x="238" y="209" fill="#4f46e5">?</text>
+  </g>
+  <text x="330" y="140" font-size="9" fill="#4f46e5">A2 buttons,</text>
+  <text x="330" y="151" font-size="9" fill="#4f46e5">added to</text>
+  <text x="330" y="162" font-size="9" fill="#4f46e5">the page</text>
+
+  <!-- shadow boundary -->
+  <rect x="400" y="30" width="282" height="200" rx="10" fill="#eef4fa" stroke="#1f4e79" stroke-width="1.6" stroke-dasharray="6 4"/>
+  <text x="414" y="50" font-size="10.5" font-weight="700" fill="#1f4e79">Closed Shadow DOM</text>
+  <text x="414" y="64" font-size="9.5" fill="#1f4e79">theme CSS and page scripts stop here</text>
+  <rect x="416" y="76" width="250" height="140" rx="8" fill="#151a1a" stroke="#2c3a36"/>
+  <rect x="428" y="88" width="104" height="22" rx="5" fill="#2a4a3c" stroke="#6fcf97"/>
+  <text x="480" y="103" text-anchor="middle" font-size="10" font-weight="700" fill="#9be7b9">Sonia · shop</text>
+  <rect x="540" y="88" width="114" height="22" rx="5" fill="#232b33" stroke="#6366f1"/>
+  <text x="597" y="103" text-anchor="middle" font-size="10" font-weight="700" fill="#c7c9ff">A2 · this form</text>
+  <text x="428" y="132" font-size="9.5" fill="#cfd6d3">One panel, two modes.</text>
+  <text x="428" y="147" font-size="9.5" fill="#cfd6d3">Each mode keeps its own messages;</text>
+  <text x="428" y="162" font-size="9.5" fill="#cfd6d3">a toggle switches between them.</text>
+  <rect x="428" y="182" width="190" height="22" rx="11" fill="#1d2424" stroke="#6fcf97"/>
+  <text x="440" y="197" font-size="9.5" fill="#8aa596">Ask anything…</text>
+
+  <!-- arrow from ? to panel -->
+  <path d="M247,115 C320,115 340,99 426,99" fill="none" stroke="#1f4e79" stroke-width="1.3" marker-end="url(#s1)"/>
+  <text x="344" y="92" font-size="9" fill="#1f4e79" text-anchor="middle">“Chat” opens A2 mode</text>
+</svg>
+<figcaption><b>Figure 1.</b> One script tag, two places on the page. A2's buttons sit beside the shop's own fields; both
+  conversations share one panel inside a closed Shadow DOM.</figcaption>
+</figure>
+
+<h2>3. How the search is built</h2>
+<p>
+  &ldquo;Orange leather bag under 300&rdquo; is only searchable if the assistant knows the shop calls that category
+  <i>Genți</i>, that colour is an attribute called <i>Culoare</i> with a term <i>Portocaliu</i>, and that prices are in
+  lei. So every shop gets a <b>store schema</b>, built from its WooCommerce data, with seven parts:
+</p>
+<ul>
+  <li><b>categories</b>, <b>attributes</b> with their terms, <b>tags</b> and <b>brands</b>: the shop's own vocabulary;</li>
+  <li><b>price range</b>, <b>currency</b> and <b>total products</b>: so prices and counts in answers are right.</li>
+</ul>
+<p>
+  A router model reads the visitor's question with this schema in view and turns it into precise search parameters:
+  a category, attribute terms, a price limit, a sort order. The search then runs against the shop's real catalogue,
+  and the answer model writes the reply from the products that come back.
+</p>
+<p>
+  The schema can be built two ways:
+</p>
+<ul>
+  <li><b>Server path.</b> Our server reads the shop's WooCommerce REST API with the keys the WordPress plugin set up,
+    and one shared builder assembles all seven parts.</li>
+  <li><b>Browser path.</b> The shopper's browser reads the shop's categories and attributes from the public Store API,
+    at most once a day, and sends them to our server with the currency and the page's language. Brands are derived
+    from the shop's Brand attribute by the same helper the server uses. That is enough for category, attribute and
+    brand search. Bringing this path to all seven parts through the shared builder, syncing on the very first widget
+    load, and changing the schema version only when the data really changed are the next planned step.</li>
+</ul>
+<p>
+  Shop knowledge (policies, delivery, FAQs, contact details) comes from crawling the shop's pages. If the host blocks
+  our crawler, the owner opens their own shop once with a one-time link from the dashboard, and their browser pages
+  through the site and sends the content back for the same extraction.
+</p>
+
+<h2>4. When the shop's host blocks our servers</h2>
+<p>
+  Some small hosting providers block every request from datacenter IP addresses, because that is where most scrapers
+  and attacks come from. Our servers run on AWS, so for a shop on such a host, Sonia's product search returned
+  nothing, even though the same shop opened fine in any browser.
+</p>
+<p class="caption-above"><b>Table 1.</b> Options considered.</p>
+<table>
+  <tr><th>Option</th><th>Why not, or why</th></tr>
+  <tr><td>Route our requests through residential proxies</td><td>Paid per gigabyte, gets expensive at scale, and adds an outside dependency</td></tr>
+  <tr><td>Add a search endpoint to the WordPress plugin</td><td>Needs a new plugin release and every shop to update before it helps</td></tr>
+  <tr><td><b>Let the shopper's browser run the search</b> (chosen)</td><td>The browser is already on the shop's page, and the shop never blocks its own visitors</td></tr>
+</table>
+
+<figure>
+<svg viewBox="0 0 700 300" xmlns="http://www.w3.org/2000/svg" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" role="img" aria-label="Sequence: the shopper's browser asks our server; the server returns planned queries and a signed token; the browser runs the queries in parallel against the shop's Store API; the shop returns products; the browser posts them back; the server answers. The direct line from our server to the shop is blocked.">
+  <defs>
+    <marker id="s2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#1f4e79"/>
+    </marker>
+    <marker id="s3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#1e6b46"/>
+    </marker>
+  </defs>
+  <g text-anchor="middle">
+    <rect x="30" y="8" width="170" height="40" rx="6" fill="#e8f5ee" stroke="#1e6b46"/>
+    <text x="115" y="25" font-size="11" font-weight="700" fill="#1b1f24">Shopper's browser</text>
+    <text x="115" y="40" font-size="9.5" fill="#55606c">on the shop's page</text>
+    <rect x="265" y="8" width="170" height="40" rx="6" fill="#eef4fa" stroke="#1f4e79"/>
+    <text x="350" y="25" font-size="11" font-weight="700" fill="#1b1f24">Our server</text>
+    <text x="350" y="40" font-size="9.5" fill="#55606c">AWS, datacenter IP</text>
+    <rect x="500" y="8" width="170" height="40" rx="6" fill="#f4f5f7" stroke="#8a95a1"/>
+    <text x="585" y="25" font-size="11" font-weight="700" fill="#1b1f24">Shop's host</text>
+    <text x="585" y="40" font-size="9.5" fill="#55606c">WooCommerce Store API</text>
+  </g>
+  <g stroke="#b9c2cc" stroke-width="1.2" stroke-dasharray="3 3">
+    <line x1="115" y1="48" x2="115" y2="292"/><line x1="350" y1="48" x2="350" y2="292"/><line x1="585" y1="48" x2="585" y2="292"/>
+  </g>
+
+  <!-- blocked -->
+  <line x1="352" y1="70" x2="580" y2="70" stroke="#c0392b" stroke-width="1.3" stroke-dasharray="5 3"/>
+  <text x="467" y="64" text-anchor="middle" font-size="9.5" fill="#a3261b">✕ blocked: datacenter IP</text>
+
+  <g font-size="9.8" fill="#1b1f24">
+    <line x1="117" y1="98" x2="346" y2="98" stroke="#1f4e79" stroke-width="1.4" marker-end="url(#s2)"/>
+    <text x="232" y="92" text-anchor="middle">1 · “orange bag under 300?”</text>
+
+    <line x1="348" y1="132" x2="119" y2="132" stroke="#1f4e79" stroke-width="1.4" marker-end="url(#s2)"/>
+    <text x="232" y="126" text-anchor="middle">2 · planned queries + signed token</text>
+
+    <line x1="117" y1="168" x2="581" y2="168" stroke="#1e6b46" stroke-width="1.4" marker-end="url(#s3)"/>
+    <text x="350" y="162" text-anchor="middle" style="paint-order:stroke;stroke:#fff;stroke-width:4px">3 · all queries in parallel, same origin, no keys</text>
+
+    <line x1="583" y1="202" x2="119" y2="202" stroke="#1e6b46" stroke-width="1.4" marker-end="url(#s3)"/>
+    <text x="350" y="196" text-anchor="middle" style="paint-order:stroke;stroke:#fff;stroke-width:4px">4 · real products from the shop's database</text>
+
+    <line x1="117" y1="238" x2="346" y2="238" stroke="#1f4e79" stroke-width="1.4" marker-end="url(#s2)"/>
+    <text x="232" y="232" text-anchor="middle">5 · raw products + token</text>
+
+    <line x1="348" y1="274" x2="119" y2="274" stroke="#1f4e79" stroke-width="1.4" marker-end="url(#s2)"/>
+    <text x="232" y="268" text-anchor="middle">6 · answer</text>
+  </g>
+  <text x="362" y="248" font-size="9" fill="#55606c">checked: count capped,</text>
+  <text x="362" y="260" font-size="9" fill="#55606c">HTML stripped, normalized</text>
+</svg>
+<figcaption><b>Figure 2.</b> Search in the shopper's browser. Our server never contacts the shop; every request to the
+  shop comes from the visitor's own browser, from the shop's own page.</figcaption>
+</figure>
+
+<ul>
+  <li><b>When it switches.</b> The shop connection has a search mode. Pressing Connect in the dashboard tests whether our
+    server can reach the shop and sets the mode both ways: reachable means server mode, blocked means browser mode.
+    Nothing flips silently in the background.</li>
+  <li><b>Phase 1.</b> The router picks the search parameters as usual, then plans the whole set of queries up front:
+    the visitor's words, plus one query per matched category and attribute term. Our server returns that plan with a
+    signed token that expires after about five minutes.</li>
+  <li><b>In the browser.</b> The widget runs every planned query at once against the shop's public Store API. The page and
+    the API share an origin, so there are no cross-origin problems, no API keys, and the host sees ordinary shopper
+    traffic. One live shop had a plugin printing PHP warnings into the API's output, so the browser parses JSON
+    tolerantly.</li>
+  <li><b>Phase 2.</b> The browser posts the raw products back with the token. Our server treats them as untrusted input:
+    it caps the count, strips HTML, limits lengths, and converts them to exactly the same product shape as the server
+    path. A visitor can only affect their own conversation. From there, the formatting, the answer model and the
+    currency handling are the same code as in server mode.</li>
+</ul>
+
+<h2>5. How it is tested</h2>
+<ul>
+  <li><b>Unit tests</b> on both sides: the Python adapters and endpoints, and the widget's search functions, which are
+    exported so they run under Node without a browser.</li>
+  <li><b>prompt-audit</b>: 15 fixed scenarios through the real pipeline, graded by an LLM judge, with drift tracked
+    between runs. Five runs in one day took the mean from 4.20 to 4.47 out of 5 and fixed missing currencies on prices
+    (0% to 100%). The details are in <a href="../goal-driven-agent-and-prompt-tuning/">the prompt-tuning paper</a>.</li>
+  <li><b>live-audit</b>: pulls real conversations and AI Search logs from production for each shop, grades every answer,
+    and writes a report per shop.</li>
+</ul>
+
+<h2>6. Limits</h2>
+<ul>
+  <li>Browser mode needs the shop's Store API, which comes with WooCommerce's block features. A shop without it is marked
+    unsupported rather than silently falling back.</li>
+  <li>In browser mode the visitor's device makes the extra requests, which costs some time on a slow mobile connection.</li>
+  <li>The Store API's own search is keyword-based, so precision depends on the planned category and attribute queries.</li>
+  <li>Browser mode covers WooCommerce. Shopify shops use the server path.</li>
+</ul>
+
+<h2>7. Try it, or talk to me</h2>
+<p>
+  The live demo is at <a href="https://demo.dbm-ai.com/">demo.dbm-ai.com</a>, with Sonia on seven demo shops. I'm happy
+  to talk with shop owners, agencies building on WooCommerce, and engineers who have solved the same problems in
+  other ways. Email alin.rizea@gmail.com, message me on
+  <a href="https://www.linkedin.com/in/alin-rizea-b10368104/">LinkedIn</a>, or open an
+  <a href="https://github.com/elisrizea/ideas-in-progress/issues">issue</a>.
+</p>
+
+</body>
+</html>
