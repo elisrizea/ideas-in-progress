@@ -1,0 +1,485 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Project Truth: Shazam for Video Claims</title>
+<meta name="author" content="Alin Rizea, DBM AI">
+<meta name="description" content="Design draft: a Shazam for video claims. Paste a viral clip and get the original footage, what was cut, the full context, and how its claims compare with claims already checked.">
+<link rel="canonical" href="https://elisrizea.github.io/ideas-in-progress/project-truth/">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://elisrizea.github.io/ideas-in-progress/project-truth/">
+<meta property="og:title" content="Project Truth: a Shazam for video claims">
+<meta property="og:description" content="Design draft: paste a viral clip and get the original footage, what was cut, the full context, and how its claims compare with claims already checked.">
+<meta property="og:image" content="https://elisrizea.github.io/ideas-in-progress/project-truth/cover.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="627">
+<meta property="og:site_name" content="DBM AI">
+<meta name="twitter:card" content="summary_large_image">
+<style>
+  @page {
+    size: A4;
+    margin: 17mm 18mm 18mm 18mm;
+    @bottom-center {
+      content: counter(page) " / " counter(pages);
+      font: 8pt "Helvetica Neue", Helvetica, Arial, sans-serif;
+      color: #6b7682;
+    }
+  }
+  :root {
+    --ink: #1b1f24;
+    --muted: #55606c;
+    --navy: #1f4e79;
+    --rule: #c8d1db;
+    --tint: #eef4fa;
+  }
+  html { background: #fff; }
+  body {
+    margin: 0;
+    background: #fff;
+    color: var(--ink);
+    font: 10.2pt/1.47 Charter, "Bitstream Charter", Georgia, serif;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  h1, h2, h3, table, figcaption, .meta, .abstract-label, .caption-above {
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  }
+  h1 { font-size: 19pt; line-height: 1.18; margin: 0 0 6px; color: var(--navy); font-weight: 700; letter-spacing: -0.2px; }
+  .subtitle { font: 11pt/1.35 "Helvetica Neue", Helvetica, Arial, sans-serif; color: var(--muted); margin: 0 0 10px; }
+  .meta { font-size: 8.8pt; color: var(--muted); padding-bottom: 10px; border-bottom: 2px solid var(--navy); margin-bottom: 12px; }
+  .meta a { color: var(--navy); }
+  .tag {
+    display: inline-block; font-size: 7.6pt; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase;
+    color: #8a4b00; background: #fff4e5; border: 1px solid #e3b878; border-radius: 3px; padding: 0 5px; margin-right: 6px;
+  }
+  .abstract { background: var(--tint); border-left: 3px solid var(--navy); padding: 8px 12px; margin: 0 0 6px; font-size: 9.8pt; }
+  .abstract-label { font-size: 8pt; font-weight: 700; letter-spacing: 0.6px; text-transform: uppercase; color: var(--navy); display: block; margin-bottom: 2px; }
+  h2 { font-size: 12.5pt; color: var(--navy); margin: 18px 0 5px; break-after: avoid; }
+  h3 { font-size: 10.4pt; color: var(--ink); margin: 12px 0 3px; break-after: avoid; }
+  p { margin: 4px 0 6px; text-align: left; hyphens: manual; }
+  ul, ol { margin: 3px 0 7px; padding-left: 20px; }
+  li { margin: 2px 0; }
+  code { font: 8.6pt/1.3 Menlo, "SF Mono", Consolas, monospace; background: #f2f4f7; padding: 0 3px; border-radius: 3px; }
+  table { border-collapse: collapse; width: 100%; margin: 6px 0 10px; font-size: 8.5pt; line-height: 1.35; break-inside: avoid; }
+  th, td { border: 1px solid var(--rule); padding: 3px 6px; vertical-align: top; text-align: left; }
+  th { background: var(--tint); font-weight: 700; }
+  td.c, th.c { text-align: center; white-space: nowrap; }
+  .yes { color: #1e6b34; font-weight: 700; }
+  .part { color: #8a4b00; font-weight: 700; }
+  .no { color: #a3261b; font-weight: 700; }
+  figure { margin: 10px 0 12px; break-inside: avoid; }
+  figure svg { width: 100%; height: auto; display: block; }
+  figcaption { font-size: 8.4pt; color: var(--muted); margin-top: 4px; line-height: 1.35; }
+  figcaption b { color: var(--ink); }
+  .caption-above { font-size: 8.4pt; color: var(--muted); margin: 8px 0 2px; break-after: avoid; }
+  .caption-above b { color: var(--ink); }
+  .callout { border: 1px solid #e3b878; background: #fffaf2; border-radius: 4px; padding: 6px 10px; margin: 8px 0; font-size: 9.6pt; break-inside: avoid; }
+  @media print { .screen-only { display: none; } }
+  @media screen {
+    html { background: #e4e8ec; }
+    body {
+      box-sizing: border-box; max-width: 210mm; margin: 24px auto; padding: 17mm 18mm;
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.12), 0 8px 28px rgba(0, 0, 0, 0.08);
+    }
+  }
+  @media screen and (max-width: 640px) {
+    body { margin: 0; padding: 20px 16px; box-shadow: none; }
+    table { display: block; overflow-x: auto; }
+  }
+</style>
+</head>
+<body>
+
+<h1>Project Truth: a Shazam for video claims</h1>
+<p class="subtitle">Design draft: matching viral clips back to their source footage, starting with Romania</p>
+<div class="meta"><span class="tag">Idea &middot; design draft</span> Alin Rizea &middot; DBM AI &middot; alin.rizea@gmail.com &middot; October 2026<span class="screen-only"> &middot; <a href="project-truth.pdf">PDF version</a> &middot; <a href="../">More ideas, and how to collaborate</a></span></div>
+
+<div class="abstract">
+  <span class="abstract-label">Summary</span>
+  Many misleading clips are not fake footage. They are real footage, cut so that someone seems to say what they did
+  not mean, or shown without the question they were answering. Project Truth is a Shazam for video claims. Ahead of
+  time it ingests source footage (interviews, debates, news, speeches), transcribes it, extracts every factual claim
+  with speaker, timestamp and topic, and stores a fingerprint for every few seconds of audio and video. When someone
+  pastes a short clip from TikTok, X or WhatsApp, it fingerprints the clip, finds the original even if it was
+  cropped, re-encoded or re-captioned, and shows what was really said around it, what was cut, and how the clip's
+  claims compare with claims already checked. It also works as a phone app on its own: share a clip to it from any
+  social app, and it lists the claims in the video, what is wrong with each one, how confident it is and why, and
+  where the same claim appears in other videos. A clip that is not in the archive yet is processed on the spot and
+  added, so the archive grows with every check. Nothing is built yet. This note sets out the design, the parts I
+  expect to be hard, and how I would test it.
+</div>
+
+<h2>1. The problem</h2>
+<p>
+  A clip on TikTok shows a minister saying &ldquo;pensions will be cut&rdquo;. The full recording has him saying
+  &ldquo;some people claim pensions will be cut; that is false&rdquo;. Every frame is genuine; the meaning is reversed.
+  Edits like this are often called cheapfakes. They are cheaper to make than deepfakes and harder to dismiss, because
+  nothing in them is synthetic.
+</p>
+<p>
+  Checking such a clip today is manual work. Someone has to work out where it came from, find the full recording,
+  scrub to the right minute and compare, while the clip keeps spreading. The slowest step, finding the original, is
+  the one a machine can do best. That is the core of this idea: answer &ldquo;where is this from, and what was cut?&rdquo;
+  in seconds, then hand the harder question, &ldquo;is it true?&rdquo;, to evidence and a human reviewer.
+</p>
+
+<h2>2. How it works</h2>
+<p>
+  Two pipelines share one archive. The ingest pipeline runs ahead of time on source footage. The check pipeline runs
+  when someone pastes a clip. The colours in Figure 1 mark the design rule that matters most: blue steps produce
+  mechanical facts with timestamps that anyone can verify, so they can be shown at once; orange steps involve
+  judgment and go through evidence and human review.
+</p>
+
+<figure>
+<svg viewBox="0 0 700 272" xmlns="http://www.w3.org/2000/svg" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" role="img" aria-label="Two pipelines. Ingest: source footage, transcribe, claims, visual context, fingerprints, into the archive. Check: viral clip, fingerprint, match and align against the archive, edit diff, claim check against the claims database, result page.">
+  <defs>
+    <marker id="b1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#1f4e79"/>
+    </marker>
+  </defs>
+  <text x="8" y="12" font-size="10" font-weight="700" fill="#1f4e79" letter-spacing="0.8">INGEST · AHEAD OF TIME</text>
+  <g font-size="10" fill="#55606c" text-anchor="middle">
+    <rect x="8" y="20" width="104" height="54" rx="6" fill="#f4f5f7" stroke="#8a95a1" stroke-width="1.2"/>
+    <text x="60" y="42" font-size="11.5" font-weight="700" fill="#1b1f24">Source footage</text>
+    <text x="60" y="58">debates, speeches</text>
+
+    <rect x="125" y="20" width="104" height="54" rx="6" fill="#f4f5f7" stroke="#8a95a1" stroke-width="1.2"/>
+    <text x="177" y="42" font-size="11.5" font-weight="700" fill="#1b1f24">Transcribe</text>
+    <text x="177" y="58">speech + speakers</text>
+
+    <rect x="242" y="20" width="104" height="54" rx="6" fill="#f4f5f7" stroke="#8a95a1" stroke-width="1.2"/>
+    <text x="294" y="42" font-size="11.5" font-weight="700" fill="#1b1f24">Claims</text>
+    <text x="294" y="58">who, when, topic</text>
+
+    <rect x="359" y="20" width="104" height="54" rx="6" fill="#f4f5f7" stroke="#8a95a1" stroke-width="1.2"/>
+    <text x="411" y="42" font-size="11.5" font-weight="700" fill="#1b1f24">Visual context</text>
+    <text x="411" y="58">captions, charts</text>
+
+    <rect x="476" y="20" width="104" height="54" rx="6" fill="#f4f5f7" stroke="#8a95a1" stroke-width="1.2"/>
+    <text x="528" y="42" font-size="11.5" font-weight="700" fill="#1b1f24">Fingerprints</text>
+    <text x="528" y="58">audio, frames, text</text>
+
+    <rect x="593" y="98" width="104" height="58" rx="6" fill="#ffffff" stroke="#1b1f24" stroke-width="1.4"/>
+    <text x="645" y="120" font-size="11.5" font-weight="700" fill="#1b1f24">Archive</text>
+    <text x="645" y="135">segments, claims</text>
+    <text x="645" y="148">Postgres, pgvector</text>
+  </g>
+  <line x1="112" y1="47" x2="123" y2="47" stroke="#1f4e79" stroke-width="1.3" marker-end="url(#b1)"/>
+  <line x1="229" y1="47" x2="240" y2="47" stroke="#1f4e79" stroke-width="1.3" marker-end="url(#b1)"/>
+  <line x1="346" y1="47" x2="357" y2="47" stroke="#1f4e79" stroke-width="1.3" marker-end="url(#b1)"/>
+  <line x1="463" y1="47" x2="474" y2="47" stroke="#1f4e79" stroke-width="1.3" marker-end="url(#b1)"/>
+  <path d="M580,47 L645,47 L645,96" fill="none" stroke="#1f4e79" stroke-width="1.3" marker-end="url(#b1)"/>
+
+  <text x="8" y="182" font-size="10" font-weight="700" fill="#1f4e79" letter-spacing="0.8">CHECK · WHEN A CLIP IS PASTED</text>
+  <g font-size="10" fill="#55606c" text-anchor="middle">
+    <rect x="8" y="190" width="104" height="54" rx="6" fill="#f4f5f7" stroke="#8a95a1" stroke-width="1.2"/>
+    <text x="60" y="212" font-size="11.5" font-weight="700" fill="#1b1f24">Shared clip</text>
+    <text x="60" y="228">via the app</text>
+
+    <rect x="125" y="190" width="104" height="54" rx="6" fill="#eef4fa" stroke="#1f4e79" stroke-width="1.2"/>
+    <text x="177" y="212" font-size="11.5" font-weight="700" fill="#1b1f24">Fingerprint</text>
+    <text x="177" y="228">+ transcribe</text>
+
+    <rect x="242" y="190" width="104" height="54" rx="6" fill="#eef4fa" stroke="#1f4e79" stroke-width="1.2"/>
+    <text x="294" y="212" font-size="11.5" font-weight="700" fill="#1b1f24">Match + align</text>
+    <text x="294" y="228">source + offsets</text>
+
+    <rect x="359" y="190" width="104" height="54" rx="6" fill="#eef4fa" stroke="#1f4e79" stroke-width="1.2"/>
+    <text x="411" y="212" font-size="11.5" font-weight="700" fill="#1b1f24">Edit diff</text>
+    <text x="411" y="228">cuts, context</text>
+
+    <rect x="476" y="190" width="104" height="54" rx="6" fill="#fff4e5" stroke="#b26a00" stroke-width="1.2"/>
+    <text x="528" y="212" font-size="11.5" font-weight="700" fill="#1b1f24">Claim check</text>
+    <text x="528" y="228">DB + human gate</text>
+
+    <rect x="593" y="190" width="104" height="54" rx="6" fill="#f4f5f7" stroke="#8a95a1" stroke-width="1.2"/>
+    <text x="645" y="212" font-size="11.5" font-weight="700" fill="#1b1f24">Result page</text>
+    <text x="645" y="228">original + context</text>
+  </g>
+  <line x1="112" y1="217" x2="123" y2="217" stroke="#1f4e79" stroke-width="1.3" marker-end="url(#b1)"/>
+  <line x1="229" y1="217" x2="240" y2="217" stroke="#1f4e79" stroke-width="1.3" marker-end="url(#b1)"/>
+  <line x1="346" y1="217" x2="357" y2="217" stroke="#1f4e79" stroke-width="1.3" marker-end="url(#b1)"/>
+  <line x1="463" y1="217" x2="474" y2="217" stroke="#1f4e79" stroke-width="1.3" marker-end="url(#b1)"/>
+  <line x1="580" y1="217" x2="591" y2="217" stroke="#1f4e79" stroke-width="1.3" marker-end="url(#b1)"/>
+
+  <!-- archive lookups -->
+  <path d="M593,118 L294,118 L294,188" fill="none" stroke="#1f4e79" stroke-width="1.3" stroke-dasharray="4 3" marker-end="url(#b1)"/>
+  <text x="440" y="112" text-anchor="middle" font-size="10" fill="#1f4e79">nearest segments</text>
+  <path d="M612,156 L612,176 L528,176 L528,188" fill="none" stroke="#1f4e79" stroke-width="1.3" stroke-dasharray="4 3" marker-end="url(#b1)"/>
+  <text x="618" y="172" font-size="10" fill="#1f4e79">checked claims</text>
+  <!-- unknown clip: processed now and added -->
+  <path d="M320,190 L320,148 L591,148" fill="none" stroke="#b26a00" stroke-width="1.3" marker-end="url(#b1)"/>
+  <text x="455" y="142" text-anchor="middle" font-size="10" fill="#8a4b00">no match: process now, add to archive</text>
+
+  <!-- legend -->
+  <rect x="8" y="256" width="12" height="12" rx="2" fill="#eef4fa" stroke="#1f4e79"/>
+  <text x="26" y="266" font-size="10" fill="#55606c">mechanical: shown at once, with timestamps</text>
+  <rect x="286" y="256" width="12" height="12" rx="2" fill="#fff4e5" stroke="#b26a00"/>
+  <text x="304" y="266" font-size="10" fill="#55606c">judgment: evidence and a human reviewer</text>
+</svg>
+<figcaption><b>Figure 1.</b> Two pipelines, one archive. Ingest runs ahead of time on source footage; check runs on a
+  shared clip in seconds when the clip is known. An unknown clip is processed on the spot and added to the archive.</figcaption>
+</figure>
+
+<h3>2.1 Ingesting source footage</h3>
+<p>
+  A clip can only be matched to footage that is already in the archive, so coverage is the product. In Romania the
+  first sources would be the footage most often clipped: parliament sessions, government and presidential press
+  conferences, televised debates and talk shows, campaign speeches, and politicians' own channels. During an
+  election, everything the candidates say on camera.
+</p>
+<p>
+  For each source the archive keeps the transcript with word timestamps, speaker turns, the extracted claims, the
+  fingerprints and a link to the original. The original video is kept privately as evidence. The public page shows
+  only short excerpts with the source named and a link to the full recording.
+</p>
+
+<h3>2.2 Claims with their context</h3>
+<ul>
+  <li><b>Transcript.</b> Whisper large through faster-whisper, with word timestamps. Small Whisper models are noticeably
+    worse on Romanian.</li>
+  <li><b>Speakers.</b> Diarization (for example pyannote) splits who speaks when. Names come from the on-screen lower-third
+    captions that TV channels show, read by OCR, and from the source's own metadata.</li>
+  <li><b>Claims.</b> The Claimify method (Microsoft Research, 2025): pick check-worthy sentences, resolve pronouns and
+    references, split into atomic claims, validate. Each claim is stored with speaker, start and end time, topic, and
+    the sentences around it. Claimify was evaluated on English, so it needs a Romanian test set before it is trusted.</li>
+  <li><b>Visual context.</b> OCR for captions, headlines and lower thirds. YOLO to find people, text regions and channel
+    logos in the frame. NVIDIA Cosmos Reason, a vision-language model, to describe scenes and charts. Two cautions. YOLO
+    finds people, not who they are, and identifying people from their faces is biometric data under GDPR Article 9, so
+    names come from captions, not faces. And Cosmos is built for physical-world video reasoning; whether it reads charts
+    and Romanian on-screen text well is a question for the test set, with OCR as the baseline.</li>
+</ul>
+
+<h3>2.3 Fingerprints that survive TikTok</h3>
+<p>
+  A perceptual hash of each frame (pHash and similar) is the obvious first choice, and it breaks on the most common
+  edit of all. Cropping a 16:9 TV frame to a 9:16 phone video keeps about a third of its width, and a whole-frame hash
+  no longer matches. So every few seconds of source gets three independent signals:
+</p>
+<ul>
+  <li><b>Audio fingerprint.</b> Shazam-style landmarks: pairs of peaks in the spectrogram, hashed with their time gap
+    (Wang, 2003; open source in Chromaprint and Panako, which also tolerates speed changes). Crops and burned-in captions
+    do not touch the audio.</li>
+  <li><b>Visual copy-detection descriptor.</b> An embedding per sampled frame from a model trained to survive crops,
+    overlays and re-encoding, such as Meta's SSCD; for whole videos, Meta's open-source TMK+PDQF hash.</li>
+  <li><b>Transcript alignment.</b> The clip's words matched against source transcripts. It survives anything done to
+    the picture, and it also gives the exact span in the source.</li>
+</ul>
+<p class="caption-above"><b>Table 1.</b> Which signal survives which edit. Expected behaviour, to be measured (section 5).</p>
+<table>
+  <tr><th>Edit made to the clip</th><th class="c">Audio fingerprint</th><th class="c">Visual descriptor</th><th class="c">Transcript</th></tr>
+  <tr><td>Re-encoded at low bitrate</td><td class="c yes">yes</td><td class="c yes">yes</td><td class="c yes">yes</td></tr>
+  <tr><td>Cropped from 16:9 to 9:16</td><td class="c yes">yes</td><td class="c part">partly</td><td class="c yes">yes</td></tr>
+  <tr><td>Captions, stickers or emoji burned in</td><td class="c yes">yes</td><td class="c part">partly</td><td class="c yes">yes</td></tr>
+  <tr><td>Mirrored</td><td class="c yes">yes</td><td class="c part">partly</td><td class="c yes">yes</td></tr>
+  <tr><td>Sped up or slowed by about 10%</td><td class="c part">partly</td><td class="c yes">yes</td><td class="c yes">yes</td></tr>
+  <tr><td>Music added under the speech</td><td class="c part">partly</td><td class="c yes">yes</td><td class="c part">partly</td></tr>
+  <tr><td>Phone filming a TV screen</td><td class="c part">partly</td><td class="c part">partly</td><td class="c yes">yes</td></tr>
+  <tr><td>Voiceover replaces the original audio</td><td class="c no">no</td><td class="c yes">yes</td><td class="c no">no</td></tr>
+</table>
+<p>
+  No signal survives every edit. So any signal may propose a candidate, and a candidate counts as a match only when
+  several segments line up at a consistent time offset. That temporal check is what keeps false matches out, and it
+  is also what produces the alignment the next step needs. I am about 80% confident in the pattern in Table 1; the
+  real numbers come from the test suite.
+</p>
+
+<h3>2.4 Match, align, diff</h3>
+<p>
+  Once a clip is aligned, every second of it maps to a second of the source. The differences are mechanical facts:
+</p>
+<ul>
+  <li><b>Cuts:</b> the source time jumps while the clip plays on.</li>
+  <li><b>Missing context:</b> what was said just before and after, such as the question being answered or the rebuttal that followed.</li>
+  <li><b>Mid-sentence start or end.</b></li>
+  <li><b>Reordering and splicing:</b> segments from different moments, or from different recordings, joined together.</li>
+  <li><b>Speed changes.</b></li>
+  <li><b>Captions that misquote:</b> the clip's on-screen text, read by OCR, compared with what was actually said.</li>
+  <li><b>Old footage presented as new:</b> the source date against the date the post implies.</li>
+</ul>
+
+<figure>
+<svg viewBox="0 0 700 222" xmlns="http://www.w3.org/2000/svg" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" role="img" aria-label="Alignment example: a 12-second clip maps to one part of the source answer; the interviewer's question before it and the rebuttal after it were cut.">
+  <text x="8" y="58" font-size="11" font-weight="700" fill="#1b1f24">Source</text>
+  <text x="8" y="72" font-size="9.5" fill="#55606c">full interview</text>
+  <g font-size="10" text-anchor="middle">
+    <rect x="80" y="40" width="105" height="36" fill="#e9ecef" stroke="#8a95a1"/>
+    <text x="132" y="62" fill="#55606c">Question</text>
+    <rect x="185" y="40" width="105" height="36" fill="#f7f8fa" stroke="#8a95a1"/>
+    <text x="237" y="62" fill="#1b1f24">“Some claim…”</text>
+    <rect x="290" y="40" width="126" height="36" fill="#d6e6f5" stroke="#1f4e79" stroke-width="1.4"/>
+    <text x="353" y="62" fill="#1b1f24" font-weight="700">“…pensions will be cut”</text>
+    <rect x="416" y="40" width="137" height="36" fill="#f7f8fa" stroke="#8a95a1"/>
+    <text x="484" y="62" fill="#1b1f24">“That is false.”</text>
+    <rect x="553" y="40" width="139" height="36" fill="#e9ecef" stroke="#8a95a1"/>
+    <text x="622" y="62" fill="#55606c">…</text>
+  </g>
+  <g font-size="9" fill="#55606c" text-anchor="middle">
+    <text x="80" y="35">0:30</text><text x="185" y="35">0:40</text><text x="290" y="35">0:50</text>
+    <text x="416" y="35">1:02</text><text x="553" y="35">1:15</text>
+  </g>
+  <!-- mapping -->
+  <path d="M290,76 L416,76 L436,140 L270,140 Z" fill="#d6e6f5" opacity="0.55"/>
+  <text x="8" y="160" font-size="11" font-weight="700" fill="#1b1f24">Clip</text>
+  <text x="8" y="174" font-size="9.5" fill="#55606c">as shared</text>
+  <rect x="270" y="140" width="166" height="36" fill="#d6e6f5" stroke="#1f4e79" stroke-width="1.4"/>
+  <text x="353" y="157" text-anchor="middle" font-size="10" font-weight="700" fill="#1b1f24">“…pensions will be cut”</text>
+  <text x="353" y="170" text-anchor="middle" font-size="9" fill="#8a4b00">caption: “He admits it”</text>
+  <g font-size="9" fill="#55606c" text-anchor="middle"><text x="270" y="190">0:00</text><text x="436" y="190">0:12</text></g>
+  <!-- flags -->
+  <g font-size="9.5" fill="#a3261b">
+    <rect x="80" y="200" width="180" height="18" rx="9" fill="#fdecea" stroke="#e8a59e"/>
+    <text x="170" y="213" text-anchor="middle">Question removed (0:30–0:40)</text>
+    <rect x="270" y="200" width="166" height="18" rx="9" fill="#fdecea" stroke="#e8a59e"/>
+    <text x="353" y="213" text-anchor="middle">Starts mid-sentence</text>
+    <rect x="446" y="200" width="200" height="18" rx="9" fill="#fdecea" stroke="#e8a59e"/>
+    <text x="546" y="213" text-anchor="middle">Rebuttal cut (1:02–1:15)</text>
+  </g>
+  <text x="692" y="16" text-anchor="end" font-size="9.5" fill="#55606c">illustrative example</text>
+</svg>
+<figcaption><b>Figure 2.</b> Alignment turns a clip into a set of checkable facts. Every flag points at a timestamp in
+  the original; none of them needs a judgment about whether anything is true.</figcaption>
+</figure>
+
+<h3>2.5 Claims and the verdict</h3>
+<p>
+  The clip's claims are matched against claims already checked, because false claims repeat in new words.
+  Each claim is embedded with a multilingual model (bge-m3 or multilingual-e5 both handle Romanian), the nearest
+  checked claims come from pgvector, and one model call confirms &ldquo;same claim, yes or no&rdquo;. New claims are
+  checked against evidence in a fixed order: primary sources first (official statistics, court documents, full
+  recordings), then wire agencies, then professional fact-checkers, then news of record.
+</p>
+<div class="callout">
+  <b>Two answers at two speeds.</b> &ldquo;Here is the original, the context and what was cut&rdquo; is shown in
+  seconds, because it is mechanical. &ldquo;Here is whether it is true&rdquo; is automatic only when the claim matches
+  one a human has already verified, and it says so with a link. Every new claim gets a proposed verdict with its
+  evidence and waits for a human reviewer before anything is published as a verdict. A model's self-reported
+  confidence is not a substitute for that check.
+</div>
+
+<h2>3. The app on its own: share a clip, get the claims</h2>
+<p>
+  The phone app needs no website visit and no copying of links. Watching a clip in TikTok, Instagram, Facebook, X,
+  YouTube or WhatsApp, the person taps <b>Share</b> and picks Project Truth, or opens a saved video with it. Both
+  Android and iOS support this through the system share sheet: the app receives the link, or the video file itself
+  for WhatsApp, and nothing else from the phone. No app can watch what is playing inside another app, and this one
+  does not try.
+</p>
+
+<h3>3.1 Known clip or new clip</h3>
+<ul>
+  <li><b>Already in the archive:</b> the answer comes back in seconds.</li>
+  <li><b>Not fingerprinted yet:</b> the clip is processed on the spot (fetch, fingerprint, transcribe, extract claims,
+    match) and added to the archive, so the next person who shares it gets an instant answer. This takes longer,
+    roughly a minute for a short clip, so the app shows progress and sends a notification when the result is ready.</li>
+  <li><b>Stored as a clip, not as a source.</b> A clip added this way is never treated as the original. A later clip that
+    matches it is reported as &ldquo;the same edit was checked before&rdquo;, with a link. Only ingested source footage
+    can be &ldquo;the original&rdquo;; otherwise one edited clip could become the reference for the next.</li>
+  <li><b>Processed once.</b> Clips are deduplicated by platform video ID and by fingerprint before any processing,
+    because processing is the expensive step.</li>
+</ul>
+
+<h3>3.2 One card per claim</h3>
+<p>For every claim in the video the app shows:</p>
+<ul>
+  <li><b>The claim</b>, who said it, and the timestamp in the clip, with a tap to play that moment.</li>
+  <li><b>What is wrong with it</b>, if anything: <i>cut or out of context</i> (from the edit diff),
+    <i>contradicted by evidence</i>, <i>misleading</i> (true but missing what changes its meaning),
+    <i>not verifiable</i>, or <i>supported</i>. Each comes with the evidence links and the source tier that decided it.</li>
+  <li><b>A confidence rating</b> and the reason for it (Table 2).</li>
+  <li><b>The same claim in other videos:</b> &ldquo;also said in 4 other videos&rdquo;, with speaker, date and a link to
+    the exact moment, found by the same claim matching as in 2.5. Claims that belong to one storyline are grouped,
+    so a person can see that a claim is part of a wider narrative.</li>
+</ul>
+
+<p class="caption-above"><b>Table 2.</b> Confidence comes from the evidence found, by fixed rules, not from the model's own score.</p>
+<table>
+  <tr><th>Rating</th><th>Given when</th><th>Shown as</th></tr>
+  <tr><td><b>High</b></td><td>The claim matches one a human reviewer has already verified, or a published check by a
+    signatory of the International Fact-Checking Network exists for it</td><td>The verdict, with a link to the earlier check</td></tr>
+  <tr><td><b>Medium</b></td><td>Primary-source evidence was found that supports or contradicts the claim, but no reviewer has confirmed it yet</td><td>&ldquo;Preliminary, not reviewed&rdquo;, with the evidence</td></tr>
+  <tr><td><b>Low</b></td><td>Only weaker sources were found, or the sources disagree</td><td>&ldquo;Unclear&rdquo;, with what was found</td></tr>
+  <tr><td><b>Not verifiable</b></td><td>Opinion, prediction, or nothing checkable found</td><td>&ldquo;Not verifiable&rdquo;, and why</td></tr>
+</table>
+<p>
+  A language model's self-reported confidence is poorly calibrated, so a number like &ldquo;92%&rdquo; would look precise
+  and mean little. A rule over the evidence can be checked by anyone, and the app shows which rule applied. The
+  match itself gets a separate confidence, computed from the alignment: how many segments line up, and how many of
+  the three signals agree.
+</p>
+
+<h3>3.3 The full result page</h3>
+<ul>
+  <li><b>The original:</b> source, date, link, and the exact minute.</li>
+  <li><b>Side by side:</b> the clip's words next to the source transcript, with cuts marked, and the edit flags from Figure 2.</li>
+  <li><b>A share card</b> that leads with the facts, not with a frame of the clip, following the format in the
+    Debunking Handbook (Lewandowsky et al., 2020), since repeating a false claim makes it more familiar.</li>
+  <li><b>schema.org ClaimReview markup</b> on every reviewed verdict, so search engines and platforms can show the check.</li>
+</ul>
+
+<h2>4. The hard parts</h2>
+<ul>
+  <li><b>Coverage.</b> It only matches what was ingested. &ldquo;No source found&rdquo; means &ldquo;not in our
+    archive&rdquo;, never &ldquo;fake&rdquo;. The page has to say that plainly.</li>
+  <li><b>Deepfakes.</b> Matching does not detect synthetic video. A widely shared clip of a public figure with no source
+    in the archive is a lead for a reviewer, not a verdict.</li>
+  <li><b>Rights.</b> The archive holds other people's footage. Store derived data (fingerprints, transcripts, claims),
+    keep originals private as evidence, and publish only short excerpts with the source named, under the EU quotation
+    exception. The EU text-and-data-mining exception (DSM Directive Article 4) may cover the analysis, but rights holders
+    can opt out of it. This needs a lawyer before launch; I am about 60% confident of the position.</li>
+  <li><b>Biometrics.</b> No face recognition in the first version. Names come from captions and metadata.</li>
+  <li><b>Defamation.</b> Wording such as &ldquo;the full recording shows&rdquo;, never &ldquo;X lied&rdquo;, and a
+    human click before any verdict is published.</li>
+  <li><b>Fetching.</b> yt-dlp is the standard tool, but platforms block datacenter addresses and change their pages
+    often. WhatsApp clips arrive as uploaded files, not links.</li>
+  <li><b>Voiceover and dubbing</b> defeat both the audio and the transcript signals, leaving only the visual one.</li>
+  <li><b>Private clips.</b> Videos shared from private chats can show private people. They can be processed to answer
+    the person who shared them, but they are never published, and personal data stays out of anything public.</li>
+  <li><b>Preliminary answers in the app.</b> A medium or low rating is an answer to one person, clearly labelled as not
+    reviewed. It is never published as a verdict without a human click.</li>
+</ul>
+
+<h2>5. How I would test it</h2>
+<ul>
+  <li><b>A transformation suite.</b> Take ingested source videos and generate clips automatically with each edit in
+    Table 1, plus known cuts. For every edit, measure whether the right source comes first, how far off the timestamps
+    are, and whether the cuts are flagged. Run it on every change and track the scores between runs, the way
+    <a href="../goal-driven-agent-and-prompt-tuning/">prompt-audit</a> tracks prompt quality.</li>
+  <li><b>Real clips.</b> A set of viral clips whose originals are known, collected from fact-checkers' published work.</li>
+  <li><b>Claims.</b> A Romanian evaluation set of about 50 clips for claim extraction, plus English clips to catch
+    regressions.</li>
+</ul>
+
+<h2>6. Build order</h2>
+<ol>
+  <li>Ingest one source type, parliament sessions: transcripts, audio fingerprints and transcript alignment. A command
+    line tool: give it a clip, get the original and the timestamp. This step alone answers the slowest question
+    today, &ldquo;where is this from?&rdquo;</li>
+  <li>Visual descriptors, temporal alignment, and the transformation suite.</li>
+  <li>The edit diff and the public result page.</li>
+  <li>Claims: extraction, matching against checked claims, the confidence rules in Table 2, and the reviewer screen.</li>
+  <li>The phone app: share-sheet intake, on-the-spot processing of unknown clips, one card per claim with links to
+    the same claim in other videos.</li>
+  <li>More sources, and full ingestion of candidates during election periods.</li>
+</ol>
+
+<h2>7. Status, and who I am looking for</h2>
+<p>
+  This is a design; nothing is built yet. It extends a claim-checking design I worked on in September 2026 with a
+  provenance layer. I am looking for:
+</p>
+<ul>
+  <li>a newsroom or fact-checking team with archive footage, or that would use the tool;</li>
+  <li>people who have worked on video copy detection or audio fingerprinting;</li>
+  <li>researchers in misinformation and media literacy, to measure whether it changes what people believe;</li>
+  <li>funding for a first version.</li>
+</ul>
+<p>
+  Email alin.rizea@gmail.com, message me on <a href="https://www.linkedin.com/in/alin-rizea-b10368104/">LinkedIn</a>,
+  or open an <a href="https://github.com/elisrizea/ideas-in-progress/issues">issue</a> on the repository.
+</p>
+
+</body>
+</html>
