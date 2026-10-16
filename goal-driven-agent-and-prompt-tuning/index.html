@@ -1,0 +1,629 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Goal-Driven Agent and Prompt Tuning</title>
+<meta name="author" content="Alin Rizea, DBM AI">
+<meta name="description" content="Working paper: a goal-driven onboarding agent built to run on a cheap, non-reasoning model, and prompt-audit, a scenario harness with an LLM judge for tuning prompts and catching regressions.">
+<link rel="canonical" href="https://elisrizea.github.io/ideas-in-progress/goal-driven-agent-and-prompt-tuning/">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://elisrizea.github.io/ideas-in-progress/goal-driven-agent-and-prompt-tuning/">
+<meta property="og:title" content="A goal-driven onboarding agent, and a scenario harness for tuning prompts">
+<meta property="og:description" content="Working paper: a goal-driven onboarding agent built to run on a cheap, non-reasoning model, and prompt-audit, a scenario harness with an LLM judge for tuning prompts and catching regressions.">
+<meta property="og:image" content="https://elisrizea.github.io/ideas-in-progress/goal-driven-agent-and-prompt-tuning/cover.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="627">
+<meta property="og:site_name" content="DBM AI">
+<meta name="twitter:card" content="summary_large_image">
+<style>
+  @page {
+    size: A4;
+    margin: 17mm 18mm 18mm 18mm;
+    @bottom-center {
+      content: counter(page) " / " counter(pages);
+      font: 8pt "Helvetica Neue", Helvetica, Arial, sans-serif;
+      color: #6b7682;
+    }
+  }
+  :root {
+    --ink: #1b1f24;
+    --muted: #55606c;
+    --navy: #1f4e79;
+    --rule: #c8d1db;
+    --tint: #eef4fa;
+    --llm: #fff4e5;
+    --llm-line: #b26a00;
+  }
+  html { background: #fff; }
+  body {
+    margin: 0;
+    background: #fff;
+    color: var(--ink);
+    font: 10.2pt/1.47 Charter, "Bitstream Charter", Georgia, serif;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  h1, h2, h3, .sans, table, figcaption, .meta, .abstract-label {
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  }
+  h1 {
+    font-size: 19pt;
+    line-height: 1.18;
+    margin: 0 0 6px;
+    color: var(--navy);
+    font-weight: 700;
+    letter-spacing: -0.2px;
+  }
+  .subtitle { font: 11pt/1.35 "Helvetica Neue", Helvetica, Arial, sans-serif; color: var(--muted); margin: 0 0 10px; }
+  .meta { font-size: 8.8pt; color: var(--muted); padding-bottom: 10px; border-bottom: 2px solid var(--navy); margin-bottom: 12px; }
+  .abstract {
+    background: var(--tint);
+    border-left: 3px solid var(--navy);
+    padding: 8px 12px;
+    margin: 0 0 6px;
+    font-size: 9.8pt;
+  }
+  .abstract-label { font-size: 8pt; font-weight: 700; letter-spacing: 0.6px; text-transform: uppercase; color: var(--navy); display: block; margin-bottom: 2px; }
+  h2 {
+    font-size: 12.5pt;
+    color: var(--navy);
+    margin: 18px 0 5px;
+    break-after: avoid;
+  }
+  h3 {
+    font-size: 10.4pt;
+    color: var(--ink);
+    margin: 12px 0 3px;
+    break-after: avoid;
+  }
+  p { margin: 4px 0 6px; text-align: left; hyphens: manual; }
+  ul, ol { margin: 3px 0 7px; padding-left: 20px; }
+  li { margin: 2px 0; }
+  code {
+    font: 8.6pt/1.3 Menlo, "SF Mono", Consolas, monospace;
+    background: #f2f4f7;
+    padding: 0 3px;
+    border-radius: 3px;
+  }
+  table {
+    border-collapse: collapse;
+    width: 100%;
+    margin: 6px 0 10px;
+    font-size: 8.5pt;
+    line-height: 1.35;
+    break-inside: avoid;
+  }
+  th, td { border: 1px solid var(--rule); padding: 3px 6px; vertical-align: top; text-align: left; }
+  th { background: var(--tint); font-weight: 700; }
+  td.num, th.num { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
+  td code { font-size: 8pt; }
+  figure { margin: 10px 0 12px; break-inside: avoid; }
+  figure svg { width: 100%; height: auto; display: block; }
+  figcaption { font-size: 8.4pt; color: var(--muted); margin-top: 4px; line-height: 1.35; }
+  figcaption b { color: var(--ink); }
+  .caption-above { font-size: 8.4pt; color: var(--muted); margin: 8px 0 2px; font-family: "Helvetica Neue", Helvetica, Arial, sans-serif; break-after: avoid; }
+  .caption-above b { color: var(--ink); }
+  .keep { break-inside: avoid; }
+  .page-break { break-before: page; }
+  .note { font-size: 9.4pt; color: var(--muted); }
+  .tag {
+    display: inline-block;
+    font-size: 7.6pt;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    color: #8a4b00;
+    background: #fff4e5;
+    border: 1px solid #e3b878;
+    border-radius: 3px;
+    padding: 0 5px;
+    margin-right: 6px;
+  }
+  .meta a { color: var(--navy); }
+  @media print { .screen-only { display: none; } }
+
+  /* On screen: show the paper as a centred A4 sheet. Print/PDF ignores this. */
+  @media screen {
+    html { background: #e4e8ec; }
+    body {
+      box-sizing: border-box;
+      max-width: 210mm;
+      margin: 24px auto;
+      padding: 17mm 18mm;
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.12), 0 8px 28px rgba(0, 0, 0, 0.08);
+    }
+  }
+  @media screen and (max-width: 640px) {
+    body { margin: 0; padding: 20px 16px; box-shadow: none; }
+    table { display: block; overflow-x: auto; }
+  }
+</style>
+</head>
+<body>
+
+<h1>A goal-driven onboarding agent, and a scenario harness for tuning prompts</h1>
+<p class="subtitle">Working paper on Sprijin360 onboarding v2 and the prompt-audit skills for Claude Code</p>
+<div class="meta"><span class="tag">Working paper &middot; early results</span> Alin Rizea &middot; DBM AI &middot; alin.rizea@gmail.com &middot; 16 October 2026<span class="screen-only"> &middot; <a href="goal-driven-agent-and-prompt-tuning.pdf">PDF version</a> &middot; <a href="../">More ideas, and how to collaborate</a></span></div>
+
+<div class="abstract">
+  <span class="abstract-label">Summary</span>
+  This note describes two pieces of work. The first is the onboarding agent on Sprijin360, a directory of
+  therapists in Romania. A practitioner talks to it for a few minutes and ends with a complete public profile.
+  The agent is goal-driven: it keeps an explicit, scored list of what it still needs and aims every question at
+  the weakest gap. It is built to run on a small, cheap, non-reasoning model (gpt-4o-mini), so the goal and the
+  bookkeeping live in code and the model only does narrow language tasks. Each turn, one model call reads the
+  reply into nine scored fields, plain code decides what is still missing, and a second model call writes the
+  next question. At the end a LangGraph fan-out drafts every text in
+  parallel. The second is prompt-audit: two Claude Code skills and a small Python harness that replay fixed
+  scenarios through a real LLM pipeline, score each answer with an LLM judge, and track drift between runs.
+  I describe how each one works, what testing found, and where the methods are still weak.
+</div>
+
+<h2>1. Context</h2>
+<p>
+  Sprijin360 (sprijin360.ro) lists psychologists, psychotherapists, nutritionists, speech therapists and coaches.
+  It grew out of LogoMio, a speech-therapy platform DBM AI built in 2025, and was built in two to three weeks in
+  early 2026 on Django, LangGraph, PostgreSQL and Redis. About 40 therapists have registered.
+</p>
+<p>
+  The first onboarding (v1) was an eight-step wizard with a form per step. It worked, but it asked practitioners
+  to write marketing copy about themselves, which most of them find slow and hard. Version 2 replaces the forms
+  with a short conversation, mostly in Romanian, by text or voice. The system pulls structured data out of the
+  answers and writes the profile for them. They review a pre-filled form next to a live preview, change what
+  they want, and submit it for admin approval. v2 writes to the same models as v1 (Category, Service, Team,
+  TeamMember) and reuses its save, review and publish code, so nothing downstream had to change.
+</p>
+
+<h2>2. The goal-driven onboarding agent</h2>
+
+<p>
+  <b>Design constraint: a cheap, non-reasoning model.</b> The agent is built to run on a small, cheap model with no
+  reasoning step: gpt-4o-mini, for all three roles (extractor, responder, writers). That keeps each onboarding cheap
+  and each reply quick. A model in this class is good at narrow language tasks, such as pulling facts out of a
+  paragraph into JSON or writing one question. It is unreliable at the things a reasoning model would manage on its
+  own over a long chat: remembering what it already has, judging when it has enough, and noticing that it is asking
+  the same thing again. So the model gets only narrow tasks, and the goal and the bookkeeping stay in code:
+</p>
+<ul>
+  <li>One job per call, with a short, specific prompt. No call is asked to plan.</li>
+  <li>The state is rebuilt and handed to the model every turn as compact JSON. The model is never trusted to remember it.</li>
+  <li>The extractor and the writers return JSON, which is checked in code. A failed or malformed call falls back to an empty result or a stock reply instead of breaking the turn.</li>
+  <li>Anything that can be counted is counted in code: service and schedule scores, turn limits, the stop rule, loop detection.</li>
+  <li>Scores can only go up, so one bad extraction cannot undo earlier progress.</li>
+  <li>Each writer sees only the fields it needs, so its context stays small and focused.</li>
+</ul>
+<p>
+  The goal itself (enough fields at 7 or more) is never handed to the model as something to pursue. It lives in the
+  evaluator, and each turn the responder is only told which fields are still missing.
+</p>
+
+<h3>2.1 State: nine scored fields</h3>
+<p>
+  The conversation fills a session record with nine fields, which the code calls <i>ingredients</i>. Each field
+  holds the raw snippets the practitioner said, a clean merged version written by the model, and a score from
+  0 to 10. A field counts as covered at 7. Fields have a priority and one of three categories.
+</p>
+<p class="caption-above"><b>Table 1.</b> The nine fields, in priority order.</p>
+<table>
+  <tr><th class="num">#</th><th>Field</th><th>What it holds</th><th>Category</th></tr>
+  <tr><td class="num">1</td><td><code>B_type</code></td><td>Type of practice: clinical psychology, psychotherapy, counselling, nutrition, physiotherapy, coaching</td><td>must</td></tr>
+  <tr><td class="num">2</td><td><code>C_what_they_do</code></td><td>Services offered and the problems they help with</td><td>must</td></tr>
+  <tr><td class="num">3</td><td><code>S_services_list</code></td><td>Structured list: name, price, duration, online or in person</td><td>must</td></tr>
+  <tr><td class="num">4</td><td><code>D_audience</code></td><td>Typical clients: adults, children, couples, specific situations</td><td>should</td></tr>
+  <tr><td class="num">5</td><td><code>E_usp</code></td><td>What sets them apart: approach, experience, hours, online sessions</td><td>should</td></tr>
+  <tr><td class="num">6</td><td><code>H_specializations</code></td><td>Methods and specialisms: CBT, EMDR, systemic, trauma, addiction</td><td>should</td></tr>
+  <tr><td class="num">7</td><td><code>S_schedule</code></td><td>Working days and hours</td><td>should</td></tr>
+  <tr><td class="num">8</td><td><code>F_story</code></td><td>How the practice started, why they became a therapist</td><td>nice</td></tr>
+  <tr><td class="num">9</td><td><code>G_approach</code></td><td>Therapeutic philosophy, what a typical session looks like</td><td>nice</td></tr>
+</table>
+
+<h3>2.2 One turn</h3>
+<p>
+  Each turn makes two model calls with plain code between them. The models only read a free-text answer and write
+  the next question. Everything about flow (scoring services, deciding when to stop, breaking loops) is ordinary
+  Python that is unit-tested and logged.
+</p>
+
+<figure>
+<svg viewBox="0 0 700 244" xmlns="http://www.w3.org/2000/svg" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" role="img" aria-label="Per-turn loop: therapist reply goes to the extractor, then merge, then evaluator; the evaluator either sends the gaps to the responder, which asks the next question, or hands off to the writer stage.">
+  <defs>
+    <marker id="a1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#1f4e79"/>
+    </marker>
+  </defs>
+  <!-- row 1 -->
+  <rect x="8" y="20" width="120" height="64" rx="7" fill="#f4f5f7" stroke="#8a95a1" stroke-width="1.2"/>
+  <text x="68" y="44" text-anchor="middle" font-size="12" font-weight="700" fill="#1b1f24">Therapist</text>
+  <text x="68" y="60" text-anchor="middle" font-size="10.5" fill="#55606c">replies by text</text>
+  <text x="68" y="74" text-anchor="middle" font-size="10.5" fill="#55606c">or voice</text>
+
+  <rect x="158" y="20" width="160" height="64" rx="7" fill="#fff4e5" stroke="#b26a00" stroke-width="1.2"/>
+  <text x="238" y="44" text-anchor="middle" font-size="12" font-weight="700" fill="#1b1f24">1 · Extractor</text>
+  <text x="238" y="60" text-anchor="middle" font-size="10.5" fill="#55606c">model · temp 0 · JSON</text>
+  <text x="238" y="74" text-anchor="middle" font-size="10.5" fill="#55606c">9 fields scored 0–10</text>
+
+  <rect x="348" y="20" width="150" height="64" rx="7" fill="#eef4fa" stroke="#1f4e79" stroke-width="1.2"/>
+  <text x="423" y="44" text-anchor="middle" font-size="12" font-weight="700" fill="#1b1f24">2 · Merge</text>
+  <text x="423" y="60" text-anchor="middle" font-size="10.5" fill="#55606c">plain Python</text>
+  <text x="423" y="74" text-anchor="middle" font-size="10.5" fill="#55606c">scores only go up</text>
+
+  <rect x="528" y="20" width="164" height="64" rx="7" fill="#eef4fa" stroke="#1f4e79" stroke-width="1.2"/>
+  <text x="610" y="44" text-anchor="middle" font-size="12" font-weight="700" fill="#1b1f24">3 · Evaluator</text>
+  <text x="610" y="60" text-anchor="middle" font-size="10.5" fill="#55606c">plain Python</text>
+  <text x="610" y="74" text-anchor="middle" font-size="10.5" fill="#55606c">done? which gap next?</text>
+
+  <line x1="128" y1="52" x2="156" y2="52" stroke="#1f4e79" stroke-width="1.4" marker-end="url(#a1)"/>
+  <line x1="318" y1="52" x2="346" y2="52" stroke="#1f4e79" stroke-width="1.4" marker-end="url(#a1)"/>
+  <line x1="498" y1="52" x2="526" y2="52" stroke="#1f4e79" stroke-width="1.4" marker-end="url(#a1)"/>
+
+  <!-- row 2 -->
+  <rect x="348" y="142" width="150" height="64" rx="7" fill="#fff4e5" stroke="#b26a00" stroke-width="1.2"/>
+  <text x="423" y="166" text-anchor="middle" font-size="12" font-weight="700" fill="#1b1f24">4 · Responder</text>
+  <text x="423" y="182" text-anchor="middle" font-size="10.5" fill="#55606c">model · temp 0.7</text>
+  <text x="423" y="196" text-anchor="middle" font-size="10.5" fill="#55606c">one open question</text>
+
+  <rect x="528" y="142" width="164" height="64" rx="7" fill="#f4f5f7" stroke="#8a95a1" stroke-width="1.2"/>
+  <text x="610" y="166" text-anchor="middle" font-size="12" font-weight="700" fill="#1b1f24">Writer stage</text>
+  <text x="610" y="182" text-anchor="middle" font-size="10.5" fill="#55606c">LangGraph fan-out</text>
+  <text x="610" y="196" text-anchor="middle" font-size="10.5" fill="#55606c">(Figure 2)</text>
+
+  <!-- evaluator -> writers -->
+  <line x1="650" y1="84" x2="650" y2="140" stroke="#1f4e79" stroke-width="1.4" marker-end="url(#a1)"/>
+  <text x="656" y="116" font-size="10.5" fill="#1f4e79">complete</text>
+  <!-- evaluator -> responder -->
+  <path d="M570,84 L570,112 L423,112 L423,140" fill="none" stroke="#1f4e79" stroke-width="1.4" marker-end="url(#a1)"/>
+  <text x="497" y="106" text-anchor="middle" font-size="10.5" fill="#1f4e79">gaps left</text>
+  <!-- responder -> therapist -->
+  <path d="M348,174 L68,174 L68,86" fill="none" stroke="#1f4e79" stroke-width="1.4" marker-end="url(#a1)"/>
+  <text x="210" y="168" text-anchor="middle" font-size="10.5" fill="#1f4e79">next question, shown and read aloud</text>
+
+  <!-- legend -->
+  <rect x="8" y="224" width="12" height="12" rx="2" fill="#fff4e5" stroke="#b26a00"/>
+  <text x="26" y="234" font-size="10.5" fill="#55606c">model call (gpt-4o-mini as seeded)</text>
+  <rect x="236" y="224" width="12" height="12" rx="2" fill="#eef4fa" stroke="#1f4e79"/>
+  <text x="254" y="234" font-size="10.5" fill="#55606c">plain Python, unit-tested</text>
+</svg>
+<figcaption><b>Figure 1.</b> One conversation turn. Two model calls per turn; the decisions in between are code.</figcaption>
+</figure>
+
+<ol>
+  <li><b>Extractor</b> (temperature 0, JSON mode). It gets the reply, the bot's previous question, a compact copy of
+    the current state and the field definitions. The previous question was added so the model knows which field
+    the person is answering; without it, answers were filed under the wrong field. It returns new snippets per
+    field, a score for every field, merged text, a list of services and a day-by-day schedule. The prompt tells it
+    to check each reply against all nine fields, not only the one asked about, and to tell apart orientations
+    (CBT, psychodynamic), specialisms (trauma, couples) and service types (assessment, counselling).</li>
+  <li><b>Merge</b> (code). Scores can only go up. Services are matched by name with a fuzzy ratio of 0.6, so
+    a service mentioned twice in slightly different words stays one service. Schedules overwrite day by day.
+    Services and schedule are scored by counting rather than by the model: one named service scores 7, two
+    score 9, three or more 10; the schedule scores 5 plus one per day with hours.</li>
+  <li><b>Evaluator</b> (code). The chat can stop when <code>C_what_they_do</code> is at 7 or more and either
+    (a) there is at least one service, one should-field at 7 and another at 6, or (b) the practitioner skipped
+    services and three should-fields are at 7. Otherwise it returns the fields under 7 in priority order and
+    notes which fields crossed 7 this turn.</li>
+  <li><b>Responder</b> (temperature 0.7). It gets what is known, what just improved, what is missing and the last
+    five turns, and writes the next question. Rules: one open question in one or two sentences, no summary of what
+    the person said, no yes/no questions, never repeat a question, services first, then schedule, then profile
+    gaps. Replies are read aloud by text-to-speech, so the prompt also swaps out Romanian words the voice
+    mispronounces.</li>
+</ol>
+
+<h3>2.3 Rules that keep the conversation short</h3>
+<ul>
+  <li><b>Minimum 4 turns</b>, even if the data is complete sooner, so the texts have some detail to work with.</li>
+  <li><b>Wrap up at turn 9</b> with whatever is there. The writers fill thin fields from domain knowledge and flag them.</li>
+  <li><b>Anti-loop.</b> If the same field is the target two turns running, it is accepted at 7 when it already
+    scores 5 or 6, or dropped when it scores lower, and the chat moves on.</li>
+  <li><b>One extra question</b> when the required fields are done but two or more nice-to-have fields are still empty.</li>
+  <li><b>Skip</b> by button, or after turn 8 by typing <i>gata</i>, <i>next</i> and similar. The skip is refused,
+    with a list of what is missing, if the must-fields are not covered.</li>
+</ul>
+
+<h3>2.4 Writer stage</h3>
+<p>
+  When the chat ends, a LangGraph <code>StateGraph</code> drafts the texts. It has seven profile nodes (title, subtitle,
+  short description, full description, team description, team expertise, approach) and three nodes per service
+  (subtitle, short and full description). All of them start from <code>START</code> together and meet at a
+  <code>finalize</code> node, which saves through the v1 save functions. Each node has its own prompt and gets
+  only the fields it needs; a service node also gets every snippet that names that service. A practitioner with
+  one service gets ten writers; one with three services gets sixteen. Each node writes to its own state key, and
+  service results and errors are combined with reducers (a deep merge and list concatenation), so no node waits
+  for another.
+</p>
+<p>
+  Each text comes back with a <i>weak</i> flag. It is set when any source field scored under 5, or, for a service
+  text, when the chat never mentioned that service. Weak texts are highlighted on the review form so the
+  practitioner knows what to check first.
+</p>
+
+<figure>
+<svg viewBox="0 0 700 246" xmlns="http://www.w3.org/2000/svg" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" role="img" aria-label="Writer stage: the finished chat fans out to seven profile writers and three writers per service, all in parallel, which join at a finalize node.">
+  <defs>
+    <marker id="a2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#1f4e79"/>
+    </marker>
+  </defs>
+  <!-- input -->
+  <rect x="8" y="104" width="130" height="62" rx="7" fill="#f4f5f7" stroke="#8a95a1" stroke-width="1.2"/>
+  <text x="73" y="128" text-anchor="middle" font-size="12" font-weight="700" fill="#1b1f24">Finished chat</text>
+  <text x="73" y="144" text-anchor="middle" font-size="10.5" fill="#55606c">9 fields, services,</text>
+  <text x="73" y="158" text-anchor="middle" font-size="10.5" fill="#55606c">form data</text>
+
+  <!-- left bus -->
+  <line x1="138" y1="135" x2="162" y2="135" stroke="#1f4e79" stroke-width="1.4"/>
+  <line x1="162" y1="74" x2="162" y2="195" stroke="#1f4e79" stroke-width="1.4"/>
+  <line x1="162" y1="74" x2="178" y2="74" stroke="#1f4e79" stroke-width="1.4" marker-end="url(#a2)"/>
+  <line x1="162" y1="195" x2="178" y2="195" stroke="#1f4e79" stroke-width="1.4" marker-end="url(#a2)"/>
+  <text x="150" y="98" text-anchor="middle" font-size="9.5" fill="#1f4e79" transform="rotate(-90 150 98)">START</text>
+
+  <!-- profile group -->
+  <rect x="180" y="8" width="330" height="132" rx="8" fill="#fbfcfd" stroke="#c8d1db" stroke-width="1.2"/>
+  <text x="192" y="25" font-size="10.5" font-weight="700" fill="#1f4e79">Profile · 7 writers</text>
+  <g font-size="10.5" fill="#1b1f24">
+    <rect x="192" y="33" width="150" height="22" rx="4" fill="#fff4e5" stroke="#b26a00"/><text x="267" y="48" text-anchor="middle">title</text>
+    <rect x="192" y="59" width="150" height="22" rx="4" fill="#fff4e5" stroke="#b26a00"/><text x="267" y="74" text-anchor="middle">subtitle</text>
+    <rect x="192" y="85" width="150" height="22" rx="4" fill="#fff4e5" stroke="#b26a00"/><text x="267" y="100" text-anchor="middle">short description</text>
+    <rect x="192" y="111" width="150" height="22" rx="4" fill="#fff4e5" stroke="#b26a00"/><text x="267" y="126" text-anchor="middle">full description</text>
+    <rect x="350" y="33" width="150" height="22" rx="4" fill="#fff4e5" stroke="#b26a00"/><text x="425" y="48" text-anchor="middle">team description</text>
+    <rect x="350" y="59" width="150" height="22" rx="4" fill="#fff4e5" stroke="#b26a00"/><text x="425" y="74" text-anchor="middle">team expertise</text>
+    <rect x="350" y="85" width="150" height="22" rx="4" fill="#fff4e5" stroke="#b26a00"/><text x="425" y="100" text-anchor="middle">approach</text>
+  </g>
+
+  <!-- service group -->
+  <rect x="180" y="152" width="330" height="86" rx="8" fill="#fbfcfd" stroke="#c8d1db" stroke-width="1.2"/>
+  <text x="192" y="169" font-size="10.5" font-weight="700" fill="#1f4e79">Per service · 3 writers</text>
+  <g font-size="10.5" fill="#1b1f24">
+    <text x="192" y="190" fill="#55606c">service 1</text>
+    <rect x="266" y="176" width="76" height="22" rx="4" fill="#fff4e5" stroke="#b26a00"/><text x="304" y="191" text-anchor="middle">subtitle</text>
+    <rect x="348" y="176" width="76" height="22" rx="4" fill="#fff4e5" stroke="#b26a00"/><text x="386" y="191" text-anchor="middle">short</text>
+    <rect x="430" y="176" width="76" height="22" rx="4" fill="#fff4e5" stroke="#b26a00"/><text x="468" y="191" text-anchor="middle">full</text>
+    <text x="192" y="220" fill="#55606c">service 2 …</text>
+    <rect x="266" y="206" width="76" height="22" rx="4" fill="#fff4e5" stroke="#b26a00" stroke-dasharray="3 2"/><text x="304" y="221" text-anchor="middle">subtitle</text>
+    <rect x="348" y="206" width="76" height="22" rx="4" fill="#fff4e5" stroke="#b26a00" stroke-dasharray="3 2"/><text x="386" y="221" text-anchor="middle">short</text>
+    <rect x="430" y="206" width="76" height="22" rx="4" fill="#fff4e5" stroke="#b26a00" stroke-dasharray="3 2"/><text x="468" y="221" text-anchor="middle">full</text>
+  </g>
+
+  <!-- right bus -->
+  <line x1="510" y1="74" x2="532" y2="74" stroke="#1f4e79" stroke-width="1.4"/>
+  <line x1="510" y1="195" x2="532" y2="195" stroke="#1f4e79" stroke-width="1.4"/>
+  <line x1="532" y1="74" x2="532" y2="195" stroke="#1f4e79" stroke-width="1.4"/>
+  <line x1="532" y1="135" x2="554" y2="135" stroke="#1f4e79" stroke-width="1.4" marker-end="url(#a2)"/>
+
+  <!-- finalize -->
+  <rect x="556" y="104" width="136" height="62" rx="7" fill="#eef4fa" stroke="#1f4e79" stroke-width="1.2"/>
+  <text x="624" y="128" text-anchor="middle" font-size="12" font-weight="700" fill="#1b1f24">finalize</text>
+  <text x="624" y="144" text-anchor="middle" font-size="10.5" fill="#55606c">save via v1 code,</text>
+  <text x="624" y="158" text-anchor="middle" font-size="10.5" fill="#55606c">flag weak texts</text>
+</svg>
+<figcaption><b>Figure 2.</b> Writer stage. Every writer starts at once and they meet at <code>finalize</code>.
+  Seven profile writers plus three per service: ten writers for one service, sixteen for three.</figcaption>
+</figure>
+
+<h3>2.5 Prompts and models are data, not code</h3>
+<p>
+  Every prompt and UI string is a database row (<code>V2Prompt</code>) keyed by slug and language, with a version
+  number, an active flag and an activation time. A prompt can be edited in Django admin, and the logs from the
+  period it was live can be matched to that version. Model, temperature and token limit are stored per role
+  (extractor, responder, generator) in <code>V2ModelConfig</code>; all three are seeded with gpt-4o-mini.
+  Logs mask email addresses and phone numbers.
+</p>
+
+<h3>2.6 How it was tested</h3>
+<p>
+  The v2 app has about 150 unit tests for the merge, scoring, stop and save logic. Conversation quality was tested
+  with simulated practitioners, three ways:
+</p>
+<ul>
+  <li><b>Scripted browser runs</b> (Playwright). Each persona's answers are keyed to phrases in the bot's question,
+    and the script clicks through the real UI. 20 personas.</li>
+  <li><b>Full-flow runs.</b> 15 personas through chat, services, tags, generation and review; 13 finished (two crashed
+    when the browser closed during a dialog).</li>
+  <li><b>LLM-simulated users</b> (<code>simulate_onboarding</code> command). gpt-4o-mini plays a terse, verbose,
+    bored, confused or careless-typing practitioner against the real pipeline, with real database sessions.</li>
+</ul>
+<p class="caption-above"><b>Table 2.</b> Problems found by the 15 March 2026 full-flow runs, and the fixes.</p>
+<table>
+  <tr><th>Problem</th><th class="num">Seen in</th><th>Fix</th></tr>
+  <tr><td>Plural “we” in texts for solo practitioners</td><td class="num">13 / 13</td><td>Singular-voice rule added to five writer prompts</td></tr>
+  <tr><td>Year founded always empty</td><td class="num">13 / 13</td><td>Key mismatch (<code>year</code> vs <code>year_founded</code>) fixed in the generator</td></tr>
+  <tr><td>Irrelevant tags, e.g. occupational therapy suggested to nutritionists</td><td class="num">~8 / 13</td><td>Domain stop words added to the tag suggester</td></tr>
+  <tr><td>CBT named in texts when the person never mentioned it</td><td class="num">5 / 13</td><td>“Do not assume methodology” added to the writer prompts</td></tr>
+</table>
+<p>
+  Re-runs for a nutritionist, a speech therapist and a psychodynamic therapist came back clean on all four.
+  Average lengths across the 13 profiles: short description 615 characters, full description 2,412.
+  The LLM-simulated runs found one more thing: the simulator let two conversations end at turns 2 and 3, under the
+  4-turn minimum. The simulator copies the view's stop logic instead of calling it, and the copy had drifted. The
+  live view was correct.
+</p>
+
+<h2>3. prompt-audit: a harness for tuning prompts</h2>
+
+<h3>3.1 The problem</h3>
+<p>
+  A unit test tells you a view returned 200. It does not tell you that a prompt edit made the bot start inventing
+  prices. prompt-audit tests behaviour: a fixed set of scenarios goes through the real pipeline, an LLM judge scores
+  each answer against written criteria, and the scores are compared with earlier runs. It is built as two Claude
+  Code skills, which run the process with the developer, and about 640 lines of Python, which do the mechanical
+  parts.
+</p>
+
+<h3>3.2 Terms</h3>
+<ul>
+  <li><b>Endpoint:</b> a Python entry point that calls an LLM.</li>
+  <li><b>Profile:</b> one way of testing an endpoint, as one role in one language (e.g. <code>generalist-en</code>).
+    It holds a constitution (purpose, manner, a role description, expected behaviours, a risk surface), where every
+    prompt lives, and a pinned judge model and judge-prompt version.</li>
+  <li><b>Scenario:</b> one YAML test: the input, the behaviours the answer must show, what it must not do, tags for
+    what it stresses, and notes for the judge.</li>
+  <li><b>Report:</b> one dated run, with full snapshots of every prompt. <b>Baseline</b> and <b>drift</b>: per-scenario
+    scores carried from run to run.</li>
+</ul>
+
+<figure>
+<svg viewBox="0 0 700 192" xmlns="http://www.w3.org/2000/svg" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" role="img" aria-label="Harness flow: profile and scenarios, then snapshot of every prompt, runner calling the real pipeline, judge, report. A loop returns from the report to the snapshot after a manual prompt edit.">
+  <defs>
+    <marker id="a3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#1f4e79"/>
+    </marker>
+  </defs>
+  <!-- skill brackets -->
+  <path d="M8,30 L8,24 L126,24 L126,30" fill="none" stroke="#8a95a1" stroke-width="1.2"/>
+  <text x="67" y="16" text-anchor="middle" font-size="10.5" font-weight="700" fill="#1f4e79">/prompt-audit-build</text>
+  <path d="M148,30 L148,24 L686,24 L686,30" fill="none" stroke="#8a95a1" stroke-width="1.2"/>
+  <text x="417" y="16" text-anchor="middle" font-size="10.5" font-weight="700" fill="#1f4e79">/prompt-audit-run</text>
+
+  <g font-size="10.5" fill="#55606c" text-anchor="middle">
+    <rect x="8" y="40" width="118" height="70" rx="7" fill="#f4f5f7" stroke="#8a95a1" stroke-width="1.2"/>
+    <text x="67" y="62" font-size="12" font-weight="700" fill="#1b1f24">Profile</text>
+    <text x="67" y="78">constitution +</text>
+    <text x="67" y="92">YAML scenarios</text>
+
+    <rect x="148" y="40" width="118" height="70" rx="7" fill="#eef4fa" stroke="#1f4e79" stroke-width="1.2"/>
+    <text x="207" y="62" font-size="12" font-weight="700" fill="#1b1f24">Snapshot</text>
+    <text x="207" y="78">every prompt</text>
+    <text x="207" y="92">text + SHA-256</text>
+
+    <rect x="288" y="40" width="118" height="70" rx="7" fill="#eef4fa" stroke="#1f4e79" stroke-width="1.2"/>
+    <text x="347" y="62" font-size="12" font-weight="700" fill="#1b1f24">Runner</text>
+    <text x="347" y="78">adapter calls the</text>
+    <text x="347" y="92">real pipeline</text>
+
+    <rect x="428" y="40" width="118" height="70" rx="7" fill="#fff4e5" stroke="#b26a00" stroke-width="1.2"/>
+    <text x="487" y="62" font-size="12" font-weight="700" fill="#1b1f24">Judge</text>
+    <text x="487" y="78">Claude, temp 0,</text>
+    <text x="487" y="92">judge prompt v1</text>
+
+    <rect x="568" y="40" width="118" height="70" rx="7" fill="#eef4fa" stroke="#1f4e79" stroke-width="1.2"/>
+    <text x="627" y="62" font-size="12" font-weight="700" fill="#1b1f24">Report</text>
+    <text x="627" y="78">drift vs last 5,</text>
+    <text x="627" y="92">proposed edits</text>
+  </g>
+
+  <line x1="126" y1="75" x2="146" y2="75" stroke="#1f4e79" stroke-width="1.4" marker-end="url(#a3)"/>
+  <line x1="266" y1="75" x2="286" y2="75" stroke="#1f4e79" stroke-width="1.4" marker-end="url(#a3)"/>
+  <line x1="406" y1="75" x2="426" y2="75" stroke="#1f4e79" stroke-width="1.4" marker-end="url(#a3)"/>
+  <line x1="546" y1="75" x2="566" y2="75" stroke="#1f4e79" stroke-width="1.4" marker-end="url(#a3)"/>
+
+  <!-- loop -->
+  <path d="M627,110 L627,150 L207,150 L207,112" fill="none" stroke="#1f4e79" stroke-width="1.4" stroke-dasharray="5 3" marker-end="url(#a3)"/>
+  <text x="417" y="168" text-anchor="middle" font-size="10.5" fill="#1f4e79">developer applies an edit by hand, then re-runs</text>
+  <text x="417" y="184" text-anchor="middle" font-size="9.5" fill="#55606c">runs and grades are cached by hash, so unchanged scenarios cost nothing</text>
+</svg>
+<figcaption><b>Figure 3.</b> The harness. The build skill writes the profile; the run skill does the rest. Nothing
+  is ever applied to a prompt automatically.</figcaption>
+</figure>
+
+<h3>3.3 /prompt-audit-build</h3>
+<p>
+  This skill only writes files; it never runs a scenario. It reads the endpoint from its entry function down to every
+  LLM call and lists every prompt source it finds: database rows, files, constants, tool docstrings (the model reads
+  them), Pydantic field descriptions, middleware, background tasks, webhook handlers, and fallback prompts hidden in
+  error branches. It then shows an 18-item checklist of places it may have missed and waits for an answer to each
+  one. It drafts the constitution one section at a time for approval and never fills a field on its own.
+</p>
+<p>
+  Scenarios come in two modes. <i>Curated</i> proposes 8 to 12, reviewed one at a time. <i>Bulk</i> proposes 20 to 50,
+  approved by category, for broad first coverage of a new agent. The target mix is about 25% golden path, 20% edge
+  cases, 20% refusals, 15% tool use, 10% known failure modes and 10% odd input (empty, very long, emoji only,
+  injection-shaped). Bulk scenarios carry their batch date, so the ones that always score 5 or never move can be
+  pruned later. A clone-translate mode copies a profile into another language and flags refusal and tone scenarios
+  for a cultural check.
+</p>
+
+<h3>3.4 /prompt-audit-run</h3>
+<ol>
+  <li>Load and validate the profile and its active scenarios.</li>
+  <li>Snapshot every prompt source before running anything: database rows, files and constants, each with a SHA-256.</li>
+  <li>Show the scenario list and estimated cost. No paid call runs until the developer says go.</li>
+  <li>Run each scenario through the endpoint's adapter against the real pipeline under test settings, and record the
+    reply, tool calls, latency and tokens. A failing scenario is recorded as an error and the run continues.</li>
+  <li>Grade each answer with the judge.</li>
+  <li>Score each prompt from the scenarios that stress it.</li>
+  <li>Build a drift table over the last five reports. A drop of 2 points or more is a hard alert. A change of judge
+    model or judge prompt is flagged, because scores across that line are not comparable.</li>
+  <li>For any prompt under 4, propose a diff with the reason and a confidence. It is never applied automatically.</li>
+  <li>Save the report with appendices: the profile, the full text and hash of every prompt, the judge prompt and the
+    cost. The report is the rollback point. The baseline moves forward on its own only when there were no hard alerts.</li>
+</ol>
+
+<h3>3.5 The code</h3>
+<ul>
+  <li><code>runner.py</code> loads a profile and a scenario and calls <code>adapters/&lt;endpoint&gt;.py</code>. The adapter's
+    whole contract is <code>call(scenario, profile)</code>, returning the reply, tool calls, tokens and metadata. Results are
+    cached under a hash of the scenario, the combined prompt hash and the model config, so a re-run with nothing changed
+    is free and any prompt edit forces a fresh call.</li>
+  <li><code>snapshot.py</code> turns <code>db_row</code>, <code>file</code> and <code>code_constant</code> sources into text plus SHA-256.</li>
+  <li><code>judge.py</code> builds the grading message (constitution, scenario, reply, latency, tool calls) and calls Claude at
+    temperature 0 with the pinned judge prompt. Its cache key is the reply, the criteria, the judge model and the
+    judge-prompt version.</li>
+  <li><code>judge_prompts/v1.md</code> gives one 1–5 score over six factors: accuracy, helpfulness, speed, persona fit, no
+    invention, and forward motion. Hard caps apply first: a must-not violation or any invented fact caps the score at 2,
+    the wrong language caps it at 1, and a reply over 10 seconds caps it at 3. Every failure is tagged with its factor
+    (<code>accuracy:</code>, <code>invention:</code>, <code>speed:</code> …), so a report can show which kind of failure increased.</li>
+</ul>
+
+<h3>3.6 Case study: Sonia, 13 May 2026</h3>
+<p>
+  Sonia is the shop assistant behind FormAI, DBM AI's chat widget for online shops. Its first profile,
+  <code>generalist-en</code>, runs 15 bulk-generated scenarios against a demo WooCommerce shop with 51 products priced in
+  euros. It was run five times in one day.
+</p>
+<p class="caption-above"><b>Table 3.</b> Five audit runs of Sonia, <code>generalist-en</code>. Mean score out of 5.</p>
+<table>
+  <tr><th>Run</th><th class="num">Mean</th><th>What changed</th><th>What the audit showed</th></tr>
+  <tr><td>R1</td><td class="num">4.20</td><td>Baseline</td><td>Prices without a currency in 6 of 15 scenarios; three product searches over 5 s</td></tr>
+  <tr><td>R2</td><td class="num">4.33</td><td>Currency rule added to the answer prompt; per-step timers added</td><td>The rule had no effect. Timings showed the answer model never saw the shop's currency; only the router did. The time went on the two model calls, not on WooCommerce.</td></tr>
+  <tr><td>R3</td><td class="num">4.27</td><td>Answer prompt cut from 3,348 to 1,977 characters; router moved to gpt-5.4-mini; currency tag passed to the answer model</td><td>Personality switching fell from 5 to 2 (the router passed bad parameters). Mean latency rose 24%.</td></tr>
+  <tr><td>R4</td><td class="num">4.20</td><td>Router moved back to gpt-4.1-mini</td><td>Personality switching back to 5. Latency varied run to run.</td></tr>
+  <tr><td>R5</td><td class="num">4.47</td><td>Code post-processor adds the shop's currency to bare prices</td><td>Currency on 15 of 15 prices, up from 0% in R1 and R2</td></tr>
+</table>
+<p>
+  Three things came out of it. The router change was meant to make Sonia faster; it made her slower and broke a tool,
+  and without fixed scenarios it would have shipped. The prompt rule for currency was the wrong fix: the model it was
+  written for could not see the data it referred to, and once it could, gpt-4.1-mini still followed it only some of
+  the time, so a few lines of deterministic code replaced it. And one run is not enough to judge latency.
+</p>
+
+<h2>4. Limitations</h2>
+<ul>
+  <li><b>The judge was not independent.</b> In these five runs the grading was done by Claude Opus 4.7 inside the same
+    Claude Code session, not by <code>judge.py</code> with its pinned Sonnet 4.6 at temperature 0. That session also proposed
+    the fixes, so the grader was not separate from the change, and the scores cannot be reproduced exactly. Future runs
+    should call <code>judge.py</code> as written.</li>
+  <li><b>One run per configuration.</b> Latency varies enough that each configuration needs three to five runs.</li>
+  <li><b>Small, unchecked suite.</b> 15 bulk-generated scenarios, not yet pruned. The scores are model judgments that no
+    person has compared with human ratings.</li>
+  <li><b>The harness has only been used on Sonia.</b> The onboarding agent was tuned with persona simulations, which find
+    problems but give no score to track. Bringing onboarding into prompt-audit needs a multi-turn adapter (the runner
+    sends one message per scenario today). The <code>V2Prompt</code> rows already fit the <code>db_row</code> snapshot kind.</li>
+  <li><b>The simulator duplicates the view's stop logic</b> and has already produced one false result. Both should call one
+    shared function.</li>
+</ul>
+
+<h2>5. Summary</h2>
+<p>
+  Both systems split the work the same way: the model does the language, and code you can test makes the decisions.
+  In onboarding, that split is what lets a cheap, non-reasoning model run a goal-driven conversation: two narrow
+  model calls per turn, plain Python for scoring, stopping and loop-breaking, and a parallel fan-out for the
+  writing. The Sonia runs show the same move from the other side: when gpt-4.1-mini would not follow a prompt rule
+  reliably, a few lines of code fixed what the prompt could not. In prompt-audit the split means fixed scenarios,
+  hashed prompt snapshots and a pinned judge, so a prompt change shows up as a number before it reaches users.
+</p>
+
+<p class="caption-above"><b>Appendix.</b> Where the code lives.</p>
+<table>
+  <tr><th>Path</th><th>What it does</th></tr>
+  <tr><td><code>onboarding/v2/ingredients.py</code></td><td>The nine field definitions, priorities and the threshold of 7</td></tr>
+  <tr><td><code>onboarding/v2/extractor.py</code>, <code>responder.py</code></td><td>The two model calls per turn</td></tr>
+  <tr><td><code>onboarding/v2/evaluation.py</code></td><td>Merge, scoring of services and schedule, stop rule, next target</td></tr>
+  <tr><td><code>onboarding/v2/views.py</code></td><td>Turn control: minimum turns, wrap-up at 9, anti-loop, skip</td></tr>
+  <tr><td><code>onboarding/v2/generator.py</code></td><td>LangGraph writer graph and save</td></tr>
+  <tr><td><code>onboarding/v2/management/commands/simulate_onboarding.py</code></td><td>LLM-simulated practitioners</td></tr>
+  <tr><td><code>tests/prompt-audit/_runner/</code></td><td>Runner, snapshot, judge, adapters, versioned judge prompts</td></tr>
+  <tr><td><code>~/.claude/skills/prompt-audit-build</code>, <code>prompt-audit-run</code></td><td>The two Claude Code skills</td></tr>
+</table>
+
+</body>
+</html>
